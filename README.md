@@ -29,7 +29,7 @@ Los datos y las credenciales se mantienen fuera del repositorio. Git no realiza 
 
 Preparada el 8 de octubre de 2026: OpenClaw 2026.9.9, Node 24.21.0 y npm 11.19.0. El servicio `openclaw-gateway.service` está habilitado para arrancar con el servidor y se ejecuta como usuario `openclaw`, sin sudo. Solo escucha en loopback, puerto 18789, con token privado.
 
-La conexión a OpenAI y la integración con Telegram están pendientes. Los proyectos todavía no contienen una aplicación.
+La cuenta de ChatGPT está autorizada mediante OAuth. Se ha verificado una respuesta real desde el gateway con `openai/gpt-6-astra`. La integración con Telegram está pendiente y los proyectos todavía no contienen una aplicación.
 
 ## Operación en MiniGUN
 
