@@ -29,7 +29,9 @@ Los datos y las credenciales se mantienen fuera del repositorio. Git no realiza 
 
 Preparada el 8 de octubre de 2026: OpenClaw 2026.9.9, Node 24.21.0 y npm 11.19.0. El servicio `openclaw-gateway.service` está habilitado para arrancar con el servidor y se ejecuta como usuario `openclaw`, sin sudo. Solo escucha en loopback, puerto 18789, con token privado.
 
-La cuenta de ChatGPT está autorizada mediante OAuth. Se ha verificado una respuesta real desde el gateway con `openai/gpt-6-astra`. Liki está conectado a Telegram y el acceso inicial del administrador está aprobado. El agente separado de Liki también ha respondido en una prueba local; la conversación completa desde Telegram queda por comprobar. El registro administrativo y el procesamiento de facturas están pendientes.
+La cuenta de ChatGPT está autorizada mediante OAuth. Liki está conectado a Telegram y la conversación inicial ya funciona. La plataforma está limitada a `openai/gpt-6-luna`, sin modelos de respaldo; se ha verificado una respuesta real con Luna y el rechazo de una selección explícita de Astra. Telegram admite únicamente al administrador mediante una lista cerrada de identificadores, mantenida fuera de Git. El registro administrativo y el procesamiento de facturas están pendientes.
+
+Los comandos de administración desde el chat, los grupos y las herramientas del agente Liki están deshabilitados. Las tareas periódicas y los heartbeats están desactivados para evitar consumo en segundo plano. Estos controles se cambian desde el servidor.
 
 ## Operación en MiniGUN
 
