@@ -1,0 +1,29 @@
+[Unit]
+Description=Shared OpenClaw Gateway
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=openclaw
+Group=openclaw
+WorkingDirectory=/data/openclaw
+Environment=HOME=/data/openclaw
+Environment=OPENCLAW_STATE_DIR=/data/openclaw/state
+Environment=OPENCLAW_CONFIG_PATH=/data/openclaw/state/openclaw.json
+Environment=PATH=/opt/ai-platform/openclaw/runtime/tools/node/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=-/data/openclaw/service.env
+ExecStart=/opt/ai-platform/openclaw/runtime/bin/openclaw gateway run
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/data/openclaw
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

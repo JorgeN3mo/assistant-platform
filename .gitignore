@@ -1,0 +1,32 @@
+# Runtime installations are managed separately from this repository.
+/openclaw/runtime/
+node_modules/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+service.env
+openclaw.json
+credentials/
+secrets/
+*.pem
+*.key
+
+# User data and generated output belong under /data, never in Git.
+/data/
+incoming/
+processed/
+backups/
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.db-wal
+*.db-shm
+*.log
+.DS_Store
