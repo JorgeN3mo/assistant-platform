@@ -2,6 +2,8 @@
 
 Liki es el bot de Telegram de Liquidator. Se ha preparado el agente `liki`, separado del agente principal, y la cuenta Telegram `liki`.
 
+Bot: https://t.me/liki_liquidator_bot. Conexión verificada con Telegram, acceso inicial del administrador aprobado y respuesta local del agente verificada. La primera conversación completa desde Telegram queda por comprobar.
+
 El token se guarda únicamente en `/data/openclaw/secrets/liki-telegram-token`, con permisos `600`, propiedad del usuario de servicio. No se introduce en un comando, en Git ni en el chat.
 
 Desde la terminal del Mac:
