@@ -1,6 +1,8 @@
 # Liquidator
 
-Primer proyecto de la plataforma. Aplicación pendiente de implementar.
+Primer proyecto de la plataforma. El bot está conectado y la gestión de usuarios JSON está implementada; el procesamiento de facturas está pendiente.
+
+Consultar [gestión de usuarios](USUARIOS.md) y [conexión de Telegram](TELEGRAM.md). `users.py` implementa el registro privado y su sincronización con OpenClaw; `test_users.py` verifica los casos de acceso y validación.
 
 Alcance de la v1:
 
