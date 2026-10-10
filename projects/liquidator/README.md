@@ -61,11 +61,12 @@ sudo scripts/deploy-liquidator.sh
 scripts/openclaw-admin.sh plugins inspect liquidator --runtime --json
 ```
 
-El despliegue enlaza el plugin, habilita sus hooks, añade botones de Telegram y
+El despliegue publica una copia del código de Git bajo `openclaw/runtime/local-plugins/liquidator/<commit>`,
+propiedad de root y sin escritura para el servicio. Enlaza ese plugin, habilita sus hooks, añade botones de Telegram y
 permiso de escritura únicamente en `invoices` y `runtime`. Conserva usuarios y
 credenciales. Hace copia privada de la configuración; ante fallo restaura la previa.
-Cambios de código o de `funciones.json` requieren reiniciar el servicio o recargar
-el plugin. Desactivar el plugin por sí solo restaura el comportamiento conversacional
+Cambios de código o de `funciones.json` requieren commit, pull y nuevo despliegue.
+Desactivar el plugin por sí solo restaura el comportamiento conversacional
 anterior: para detener Liki sin consumo, detener el servicio o desactivar su cuenta.
 
 No subir facturas, resultados, bases de datos ni credenciales al repositorio.

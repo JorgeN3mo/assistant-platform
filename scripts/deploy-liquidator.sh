@@ -5,6 +5,22 @@ set -euo pipefail
 repo=/opt/ai-platform
 config=/data/openclaw/state/openclaw.json
 dropin=/etc/systemd/system/openclaw-gateway.service.d/liquidator.conf
+# OpenClaw rejects native plugin code owned by an unrelated login user. Publish a
+# root-owned, versioned snapshot instead of granting the service write access to Git.
+git -C "$repo" diff --quiet HEAD -- projects/liquidator/openclaw-plugin projects/liquidator/funciones.json
+revision=$(git -C "$repo" rev-parse HEAD)
+releases="$repo/openclaw/runtime/local-plugins/liquidator"
+release="$releases/$revision"
+install -d -o root -g root -m 755 "$releases"
+if [[ ! -d $release ]]; then
+  staged=$(mktemp -d "$releases/.staging-XXXXXXXX")
+  cp -R "$repo/projects/liquidator/openclaw-plugin" "$staged/openclaw-plugin"
+  cp "$repo/projects/liquidator/funciones.json" "$staged/funciones.json"
+  chown -R root:root "$staged"
+  chmod -R go-w "$staged"
+  chmod 755 "$staged"
+  mv "$staged" "$release"
+fi
 backup=$(mktemp -d /data/openclaw/state/liquidator-deploy-XXXXXXXX)
 chmod 700 "$backup"
 cp -p "$config" "$backup/openclaw.json"
@@ -31,7 +47,7 @@ chmod 710 /data/liquidator
 install -d -o openclaw -g openclaw -m 700 /data/liquidator/runtime /data/liquidator/invoices
 install -d -m 755 "$(dirname "$dropin")"
 install -m 644 "$repo/openclaw/liquidator.conf" "$dropin"
-"$repo/scripts/openclaw-admin.sh" plugins install --link "$repo/projects/liquidator/openclaw-plugin" --force --no-enable
+"$repo/scripts/openclaw-admin.sh" plugins install --link "$release/openclaw-plugin" --force --no-enable
 python3 - "$config" <<'PY'
 import json, os, sys, tempfile
 p = sys.argv[1]
