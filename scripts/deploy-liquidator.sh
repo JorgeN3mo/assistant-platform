@@ -47,6 +47,19 @@ chmod 710 /data/liquidator
 install -d -o openclaw -g openclaw -m 700 /data/liquidator/runtime /data/liquidator/invoices
 install -d -m 755 "$(dirname "$dropin")"
 install -m 644 "$repo/openclaw/liquidator.conf" "$dropin"
+# A changed versioned path must replace the previous explicit path, not add a
+# second candidate with the same plugin ID. Other plugins are untouched.
+python3 - "$config" "$releases/" <<'PY'
+import json, sys
+p, prefix = sys.argv[1:]
+with open(p) as f:
+    cfg = json.load(f)
+load = cfg.setdefault('plugins', {}).setdefault('load', {})
+load['paths'] = [v for v in load.get('paths', []) if not v.startswith(prefix)]
+with open(p, 'w') as f:
+    json.dump(cfg, f, indent=2)
+    f.write('\n')
+PY
 "$repo/scripts/openclaw-admin.sh" plugins install --link "$release/openclaw-plugin" --force --no-enable --accept-capabilities
 python3 - "$config" <<'PY'
 import json, os, sys, tempfile
