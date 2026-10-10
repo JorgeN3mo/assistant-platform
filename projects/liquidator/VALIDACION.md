@@ -1,47 +1,67 @@
 # Validación — 10 de octubre de 2026
 
-Código desplegado: `8e9c739`. MiniGUN: Node 24.21.0, OpenClaw 2026.9.9.
-El plugin está `loaded`, con los hooks `reply_dispatch` y `before_agent_run`,
-servicio `liquidator` y configuración válida. El gateway está activo.
+Implementación v0.2 desplegada: `24626af`. MiniGUN: Node 24.21.0, OpenClaw 2026.9.9.
+Plugin cargado con ambos hooks y servicio; configuración válida y gateway activo.
 
-## Evidencia
+## Pruebas automatizadas
 
-- 18 pruebas del flujo de facturas y 11 de usuarios: todas pasan. Cubren acceso,
-  aislamiento, entradas inválidas, duplicados, versiones de botones, cobro, errores
-  de almacenamiento, interrupciones, límites y persistencia.
-- Lectura real de las dos muestras del usuario con Luna: empresas, referencias
-  completas, fechas, clientes, establecimientos e importes correctos (141,59 € y
-  53,85 €). No se mezcló la factura principal con los documentos del fondo.
-- Ensayo con el cargador real de OpenClaw, hooks y almacenamiento temporal privado:
-  ambas fotos guardadas y leídas; botón tarjeta; confirmación; duplicado sin nueva
-  llamada; remitente no autorizado sin respuesta ni lectura.
-- Nuevo proceso: las fichas conservan estados y forma de cobro. Hashes de ambos
-  originales correctos, archivos 600 y `PRAGMA integrity_check` devuelve `ok`.
-- Gateway activo: una petición explícita de conversación libre a Liki se bloquea
-  con `hook_block` antes del modelo, sin uso registrado. No se entrega a Telegram.
-- Permisos reales: raíz de Liquidator 710; perfiles administrativos 700 sin lectura
-  del usuario de servicio; facturas y SQLite bajo carpetas privadas del servicio.
-  systemd solo añade escritura en `invoices` y `runtime`.
+28 pruebas Node y 11 pruebas de usuarios Python: todas pasan. Cubren:
 
-Los ensayos no enviaron mensajes de Telegram ni crearon liquidaciones. Los datos de
-prueba están separados de las fichas de producción y no se incluyen en Git.
+- Acceso, grupos, revocación durante lectura/ayuda y aislamiento entre propietarios.
+- Recepción duradera, firmas, tamaño, rutas, duplicados, errores e interrupciones.
+- Empresa y número completos, céntimos, fechas, código cliente obligatorio.
+- Tres empresas independientes; paginación con totales de toda la lista y
+  coincidencias de los últimos cuatro dígitos, conservando ceros.
+- Correcciones de facturas aceptadas, control de revisión y cierre bloqueado
+  mientras falten aceptación o datos obligatorios.
+- Transferencia con fecha y pagaré con banco/vencimiento; edición tras reiniciar.
+- Cierre, reapertura, nuevas fotos en un lote independiente y versiones del CSV.
+- CSV estable, total, escape de fórmulas e invalidación al reabrir.
+- Confirmación de borrado, eliminación de archivos y filas activas, recuperación
+  de un borrado interrumpido y conservación de contadores de consumo.
+- Ayuda solo desde textos del catálogo, sin herramientas; deduplicación y límites
+  persistentes por minuto/día; fallo del proveedor con menú como alternativa.
+- Migración de esquema 1 a 2 conservando fichas, originales, fechas y consumo.
 
-## Problemas detectados y corregidos
+## Integración real en MiniGUN
 
-- Luna devolvía la serie/año sin el correlativo: instrucciones más precisas y
-  validación que rechaza referencias formadas únicamente por serie/año.
-- OpenClaw exige propiedad segura del código: copia versionada de Git propiedad de
-  root. Entrada JavaScript nativa y catálogo JSON incluido dentro del paquete.
-- OpenClaw crea distintas instancias capturadas para mensajes e inferencia: la
-  autorización comparte únicamente IDs aleatorios de lecturas en curso dentro del
-  proceso. Se retiran siempre al terminar; el texto del usuario no concede acceso.
-- El despliegue valida la carga y ambos hooks, además de la salud del gateway.
+Se usó el cargador de OpenClaw y el plugin desplegado, con almacenamiento temporal
+privado distinto del de producción. No se enviaron mensajes a Telegram.
 
-## Pendiente para cerrar el bloque 3
+- Remitente desconocido: ninguna respuesta ni creación de almacenamiento.
+- Las dos fotos reales se guardaron y leyeron con Luna: DIBOS y REDISSA & DIBOS,
+  referencias completas, códigos cliente e importes 141,59 € y 53,85 € correctos.
+  Reenviar la misma foto no hizo otra extracción.
+- Se eligió pagaré y se introdujeron banco/vencimiento en pasos guiados; para
+  transferencia se exigió su fecha. Ambas fichas se aceptaron correctamente.
+- Se cerró D sin cerrar RD. Descargar CSV generó un archivo con el total y una
+  respuesta de documento para el dispatcher. Se reabrió, corrigió el importe,
+  aceptó y cerró de nuevo: versión 2. El CSV anterior se eliminó del servidor.
+- Se borró una factura tras confirmación: original y ficha desaparecieron;
+  los intentos consumidos permanecieron contabilizados.
+- Luna real respondió desde el manual a una duda de edición y un comando mal
+  escrito; una petición de un poema fuera de alcance recibió la respuesta limitada.
+- SQLite: esquema 2, integridad `ok` y estado conservado al reabrir la conexión.
+- El gateway activo bloqueó una petición directa de conversación libre con
+  `hook_block`, antes de inferencia y sin entrega a Telegram.
 
-Enviar desde el iPhone al bot: verificar formato recibido desde Telegram, legibilidad,
-ficha y botones visibles. Cambiar forma de cobro, confirmar y consultar la ficha.
-El ensayo del backend no sustituye esta comprobación del transporte y la interfaz.
-No hay aún liquidaciones, lectura automática de PDF, múltiples páginas, reapertura de
-fichas confirmadas ni avisos de solicitudes de acceso. La corrección es por comando
-explícito y puede simplificarse después de esta primera prueba.
+## Producción y despliegue
+
+Se creó copia privada de configuración y SQLite antes de migrar. La base real
+conservó su única ficha antigua descartada, sin introducir facturas de las pruebas.
+La migración terminó con integridad correcta. Continúa un único usuario autorizado,
+allowlist en cuenta y canal, grupos deshabilitados y Luna como único modelo.
+
+El código publicado procede de Git y se ejecuta desde una copia versionada de root.
+El servicio mantiene sus permisos limitados; los perfiles administrativos quedan
+fuera de su lectura. No hay credenciales ni facturas reales en el repositorio.
+
+## Pendiente de aceptación móvil
+
+Probar el [recorrido completo](FACTURAS.md) desde el iPhone: foto, ficha y botones,
+correcciones, listas, cierre, recepción efectiva del CSV y reapertura. Se ha probado
+el contenido del documento y el payload de descarga, no una entrega real del CSV a
+Telegram. Esta distinción es necesaria antes de dar por cerrados los bloques 3 y 4.
+
+Siguen fuera: avisos de solicitudes de acceso, presentación del documento, formato
+final de entrega, copias periódicas, cobros parciales, PDF automático y varias páginas.
