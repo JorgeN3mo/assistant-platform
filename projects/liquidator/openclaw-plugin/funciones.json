@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "estado": "implementado_pendiente_de_despliegue",
+  "estado": "implementado",
   "aviso": "Este catálogo lo carga el plugin liquidator al arrancar. Solo controla el bot cuando el plugin está desplegado y activo. Cambios requieren recarga.",
   "funciones": [
     {

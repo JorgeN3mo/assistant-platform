@@ -7,7 +7,7 @@ config=/data/openclaw/state/openclaw.json
 dropin=/etc/systemd/system/openclaw-gateway.service.d/liquidator.conf
 # OpenClaw rejects native plugin code owned by an unrelated login user. Publish a
 # root-owned, versioned snapshot instead of granting the service write access to Git.
-git -C "$repo" diff --quiet HEAD -- projects/liquidator/openclaw-plugin projects/liquidator/funciones.json
+git -C "$repo" diff --quiet HEAD -- projects/liquidator/openclaw-plugin
 revision=$(git -C "$repo" rev-parse HEAD)
 releases="$repo/openclaw/runtime/local-plugins/liquidator"
 release="$releases/$revision"
@@ -15,7 +15,6 @@ install -d -o root -g root -m 755 "$releases"
 if [[ ! -d $release ]]; then
   staged=$(mktemp -d "$releases/.staging-XXXXXXXX")
   cp -R "$repo/projects/liquidator/openclaw-plugin" "$staged/openclaw-plugin"
-  cp "$repo/projects/liquidator/funciones.json" "$staged/funciones.json"
   chown -R root:root "$staged"
   chmod -R go-w "$staged"
   chmod 755 "$staged"

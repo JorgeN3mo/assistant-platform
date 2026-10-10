@@ -8,10 +8,10 @@ El cierre de la prueba requiere enviar una foto desde el iPhone al bot y verific
 
 ```text
 projects/liquidator/
-├── funciones.json         # Funciones habilitadas; el plugin lo lee al arrancar
 ├── profile.example.json   # Ejemplo ficticio del perfil de usuario
 ├── users.py               # Administración de perfiles y acceso efectivo
 ├── openclaw-plugin/
+│   ├── funciones.json     # Acciones habilitadas, leídas al arrancar
 │   ├── index.js           # Entrada JavaScript nativa de OpenClaw
 │   ├── plugin.mjs         # Intercepta mensajes, botones y bloquea chat libre
 │   ├── controller.mjs     # Acciones cerradas, acceso y fichas de revisión

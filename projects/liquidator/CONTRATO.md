@@ -24,7 +24,7 @@ no se admiten cambios de una ficha ya confirmada. La identidad documental duplic
 (empresa + referencia normalizada, dentro del mismo usuario) bloquea la confirmación.
 La misma entrega o los mismos bytes del mismo usuario reutilizan el registro.
 
-Las acciones de revisión están en `funciones.json`. Nunca ejecutan texto libre o
+Las acciones de revisión están en `openclaw-plugin/funciones.json`. Nunca ejecutan texto libre o
 instrucciones de documentos. Una corrección usa campos explícitos y valores validados.
 La extracción utiliza solo `openai/gpt-6-luna`, sin herramientas ni modelos de reserva,
 con plazo de 60 segundos y máximo 30 intentos diarios por usuario. Reintentar requiere

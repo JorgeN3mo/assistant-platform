@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import {Store, UserError, readAttachment, userId, FIELDS} from './store.mjs';
 import {extract} from './extract.mjs';
 
-const catalog = JSON.parse(fs.readFileSync(new URL('../funciones.json', import.meta.url), 'utf8'));
+const catalog = JSON.parse(fs.readFileSync(new URL('./funciones.json', import.meta.url), 'utf8'));
 const enabled = id => catalog.funciones.some(f => f.id === id && f.habilitada === true);
 const HELP = 'Envía una foto de una factura cobrada (JPG/PNG, máximo 10 MiB). Guardaré el archivo y te pediré revisar los datos. Efectivo por defecto; puedes cambiarlo. /pendientes muestra tus últimas fichas. /ver REFERENCIA abre una ficha. No hay conversación libre. Las liquidaciones aún no se generan.';
 export function authorized(cfg, account, sender, isGroup, expectedAccount = 'liki') {
