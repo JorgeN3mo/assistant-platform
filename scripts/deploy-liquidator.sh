@@ -49,13 +49,13 @@ install -d -m 755 "$(dirname "$dropin")"
 install -m 644 "$repo/openclaw/liquidator.conf" "$dropin"
 # A changed versioned path must replace the previous explicit path, not add a
 # second candidate with the same plugin ID. Other plugins are untouched.
-python3 - "$config" "$releases/" <<'PY'
+python3 - "$config" "$releases/" "$release/openclaw-plugin" <<'PY'
 import json, sys
-p, prefix = sys.argv[1:]
+p, prefix, current = sys.argv[1:]
 with open(p) as f:
     cfg = json.load(f)
 load = cfg.setdefault('plugins', {}).setdefault('load', {})
-load['paths'] = [v for v in load.get('paths', []) if not v.startswith(prefix)]
+load['paths'] = [v for v in load.get('paths', []) if not v.startswith(prefix)] + [current]
 with open(p, 'w') as f:
     json.dump(cfg, f, indent=2)
     f.write('\n')
