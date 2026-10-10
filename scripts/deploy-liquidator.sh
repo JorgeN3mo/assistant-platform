@@ -47,7 +47,7 @@ chmod 710 /data/liquidator
 install -d -o openclaw -g openclaw -m 700 /data/liquidator/runtime /data/liquidator/invoices
 install -d -m 755 "$(dirname "$dropin")"
 install -m 644 "$repo/openclaw/liquidator.conf" "$dropin"
-"$repo/scripts/openclaw-admin.sh" plugins install --link "$release/openclaw-plugin" --force --no-enable
+"$repo/scripts/openclaw-admin.sh" plugins install --link "$release/openclaw-plugin" --force --no-enable --accept-capabilities
 python3 - "$config" <<'PY'
 import json, os, sys, tempfile
 p = sys.argv[1]
