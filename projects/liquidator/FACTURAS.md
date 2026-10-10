@@ -56,9 +56,16 @@ que el calendario diga viernes o de la fecha impresa de la factura.
 
 ## Validación de desarrollo
 
-Las pruebas automatizadas usan únicamente datos ficticios. Las dos fotos reales
+Las 29 pruebas automatizadas usan únicamente datos ficticios. Las dos fotos reales
 aportadas se han leído en MiniGUN con el modelo autorizado, sin herramientas y sin
 entrega a Telegram. Importes verificados: 141,59 € y 53,85 €. Se corrigió una omisión
 de la parte correlativa del número; se añadió una validación que rechaza solo serie/año.
 Esta prueba demuestra lectura de esas muestras, no precisión garantizada para todas
 las fotos. La revisión humana es obligatoria y no depende de la confianza del modelo.
+
+La integración con el cargador real del plugin también pasó: recepción de ambas
+fotos, extracción, cambio a tarjeta, confirmación, duplicados sin nueva lectura y
+remitente no autorizado sin respuesta. Se verificaron hashes, permisos privados,
+integridad SQLite y persistencia en un proceso nuevo. Los registros de este ensayo
+están separados de producción; no se enviaron mensajes a Telegram. El gateway activo
+rechazó una petición de chat libre antes del modelo. Ver [VALIDACION.md](VALIDACION.md).

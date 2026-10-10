@@ -3,10 +3,12 @@
 | Bloque | Alcance | Estado |
 |---|---|---|
 | 1. Base y despliegue | Repositorio, MiniGUN, servicio y Telegram | Operativo |
-| 2. Acceso y funciones | Perfiles privados, allowlist y acciones cerradas | Implementado; avisos de solicitudes aplazados |
-| 3. Factura completa hasta revisión | Original privado, SQLite, lectura, cobro y confirmación | Implementado y probado; pendiente recorrido real desde iPhone |
+| 2. Acceso y funciones | Perfiles privados, allowlist y acciones cerradas | Desplegado; avisos de solicitudes aplazados |
+| 3. Factura completa hasta revisión | Original privado, SQLite, lectura, cobro y confirmación | Desplegado y validado en MiniGUN; pendiente recorrido real desde iPhone |
 | 4. Liquidaciones | Seleccionar facturas, cerrar lote y generar fichero | Pendiente |
 | 5. Presentación y operación | Marcar presentación, correcciones posteriores, copias y recuperación | Pendiente |
+
+Validación del servidor completada el 10 de octubre de 2026: [resultados](VALIDACION.md).
 
 ## Cierre del bloque 3
 
