@@ -10,4 +10,4 @@ El token del gateway se genera en el servidor. La cuenta de ChatGPT está autori
 
 Para volver a autorizar la cuenta, ejecutar `scripts/openclaw-admin.sh models auth login --provider openai --device-code`, completar el flujo en el navegador y consultar `models auth list --provider openai`. Si el perfil necesita activación, usar `models auth activate <profileId> --agent main` y nuestro script de reinicio. No guardar códigos de dispositivo ni credenciales en documentación o commits.
 
-El servicio solo puede escribir en `/data/openclaw`; todavía no tiene acceso a `/data/liquidator`. Ese acceso se resolverá al implementar la integración.
+El drop-in `liquidator.conf`, aplicado por `scripts/deploy-liquidator.sh`, añade escritura en `/data/liquidator/invoices` y `/data/liquidator/runtime`. El servicio no puede leer ni modificar los perfiles administrativos en `users`. La carpeta padre permite solo atravesarla al grupo `openclaw` (710); las carpetas de datos del servicio son privadas (700).

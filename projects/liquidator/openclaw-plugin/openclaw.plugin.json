@@ -1,0 +1,18 @@
+{
+  "id": "liquidator",
+  "name": "Liquidator",
+  "description": "Recepción y revisión de facturas con acceso cerrado, sin conversación libre.",
+  "activation": {"onStartup": true},
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "dataDir": {"type": "string", "default": "/data/liquidator"},
+      "mediaRoot": {"type": "string", "default": "/data/openclaw/state/media"},
+      "accountId": {"type": "string", "default": "liki"},
+      "maxBytes": {"type": "integer", "minimum": 1024, "maximum": 10485760, "default": 10485760},
+      "dailyLimit": {"type": "integer", "minimum": 1, "maximum": 100, "default": 30},
+      "extractionEnabled": {"type": "boolean", "default": true}
+    }
+  }
+}

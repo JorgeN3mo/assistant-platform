@@ -6,6 +6,11 @@ Los perfiles JSON privados son la fuente de verdad. Se administran en MiniGUN co
 
 Ruta: `/data/liquidator/users/<telegram_id>/profile.json`.
 
+El archivo [profile.example.json](profile.example.json) muestra el formato con datos
+ficticios. No concede acceso a nadie ni se carga automáticamente. Los perfiles reales
+solo existen en MiniGUN; para consultar quién tiene acceso, usar `usuarios.sh listar`
+y comprobar la sincronización con OpenClaw, como se explica más abajo.
+
 ```json
 {
   "telegram_id": "123456789",

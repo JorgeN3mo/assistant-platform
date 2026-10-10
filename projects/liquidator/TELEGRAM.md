@@ -18,6 +18,6 @@ El acceso privado utiliza ahora `dmPolicy: allowlist`, con solo el identificador
 
 La política `modelPolicy.allow` admite únicamente `openai/gpt-6-luna`. El modelo principal y el auxiliar son Luna, con razonamiento bajo y sin fallbacks. Los comandos de texto y nativos, los cambios de configuración desde Telegram y las tareas periódicas están deshabilitados. El acceso inicial se aprobó por emparejamiento y después se cerró con la lista explícita de usuarios.
 
-El acceso ahora se mantiene mediante [perfiles JSON privados](USUARIOS.md). Usar `scripts/usuarios.sh aplicar` después de editar perfiles o cambiar estados; no mantener la lista de OpenClaw manualmente. El aislamiento completo de archivos y el procesamiento de facturas siguen pendientes. No enviar facturas reales hasta desarrollar esa parte.
+El acceso ahora se mantiene mediante [perfiles JSON privados](USUARIOS.md). Usar `scripts/usuarios.sh aplicar` después de editar perfiles o cambiar estados; no mantener la lista de OpenClaw manualmente. El plugin Liquidator añade recepción privada, lectura y revisión mediante funciones cerradas. Consultar [la prueba desde iPhone](FACTURAS.md). Los comandos propios del plugin son acciones validadas, independientes de los comandos administrativos de OpenClaw, que siguen desactivados. El cierre de la prueba requiere verificar el envío y los botones reales desde Telegram.
 
 Referencia: https://docs.openclaw.ai/channels/telegram/setup

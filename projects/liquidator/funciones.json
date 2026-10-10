@@ -1,0 +1,103 @@
+{
+  "version": 2,
+  "estado": "implementado_pendiente_de_despliegue",
+  "aviso": "Este catálogo lo carga el plugin liquidator al arrancar. Solo controla el bot cuando el plugin está desplegado y activo. Cambios requieren recarga.",
+  "funciones": [
+    {
+      "id": "ayuda",
+      "entrada": "/start o /ayuda",
+      "habilitada": true,
+      "estados_permitidos": [
+        "activo"
+      ],
+      "usa_llm": false
+    },
+    {
+      "id": "recibir_factura",
+      "entrada": "foto JPG/PNG o documento PDF hasta 10 MiB",
+      "habilitada": true,
+      "estados_permitidos": [
+        "activo"
+      ],
+      "usa_llm": false
+    },
+    {
+      "id": "extraer_factura",
+      "entrada": "foto nueva o botón Reintentar lectura",
+      "habilitada": true,
+      "estados_permitidos": [
+        "activo"
+      ],
+      "usa_llm": true
+    },
+    {
+      "id": "consultar_facturas",
+      "entrada": "/pendientes o /ver REFERENCIA",
+      "habilitada": true,
+      "estados_permitidos": [
+        "activo"
+      ],
+      "usa_llm": false
+    },
+    {
+      "id": "corregir_factura",
+      "entrada": "/corregir REFERENCIA VERSION CAMPO VALOR",
+      "habilitada": true,
+      "estados_permitidos": [
+        "activo"
+      ],
+      "usa_llm": false
+    },
+    {
+      "id": "cambiar_cobro",
+      "entrada": "botón efectivo, tarjeta o transferencia",
+      "habilitada": true,
+      "estados_permitidos": [
+        "activo"
+      ],
+      "usa_llm": false
+    },
+    {
+      "id": "confirmar_cobro",
+      "entrada": "botón Confirmar",
+      "habilitada": true,
+      "estados_permitidos": [
+        "activo"
+      ],
+      "usa_llm": false
+    },
+    {
+      "id": "descartar_factura",
+      "entrada": "botón Descartar",
+      "habilitada": true,
+      "estados_permitidos": [
+        "activo"
+      ],
+      "usa_llm": false
+    },
+    {
+      "id": "solicitar_acceso",
+      "habilitada": false,
+      "estado": "pendiente",
+      "usa_llm": false
+    },
+    {
+      "id": "consultar_solicitud",
+      "habilitada": false,
+      "estado": "pendiente",
+      "usa_llm": false
+    },
+    {
+      "id": "generar_liquidacion",
+      "habilitada": false,
+      "estado": "pendiente",
+      "usa_llm": false
+    },
+    {
+      "id": "presentar_liquidacion",
+      "habilitada": false,
+      "estado": "pendiente",
+      "usa_llm": false
+    }
+  ]
+}

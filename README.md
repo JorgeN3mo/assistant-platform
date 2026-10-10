@@ -2,6 +2,9 @@
 
 Una plataforma sencilla en MiniGUN, con OpenClaw compartido y proyectos independientes. Se desarrolla en el Mac y se mantiene todo el código en este repositorio.
 
+Para localizar las funciones del bot, los usuarios autorizados y el diseño
+de almacenamiento de facturas, consultar el [mapa de Liquidator](projects/liquidator/README.md#dónde-está-cada-cosa).
+
 ```text
 assistant-platform/
 ├── openclaw/             # Referencias de configuración y servicio
@@ -20,7 +23,7 @@ assistant-platform/
 | Configuración y estado privados de OpenClaw | `/data/openclaw/state` |
 | Espacio de trabajo de OpenClaw | `/data/openclaw/workspace` |
 | Credenciales opcionales del servicio, fuera de Git | `/data/openclaw/service.env` |
-| Facturas, resultados y futura base SQLite | `/data/liquidator` |
+| Facturas, resultados y base SQLite | `/data/liquidator` |
 | Futuras copias locales | `/data/liquidator/backups` |
 
 Los datos y las credenciales se mantienen fuera del repositorio. Git no realiza copias de las facturas. Las copias locales todavía no están programadas.
@@ -29,7 +32,7 @@ Los datos y las credenciales se mantienen fuera del repositorio. Git no realiza 
 
 Preparada el 8 de octubre de 2026: OpenClaw 2026.9.9, Node 24.21.0 y npm 11.19.0. El servicio `openclaw-gateway.service` está habilitado para arrancar con el servidor y se ejecuta como usuario `openclaw`, sin sudo. Solo escucha en loopback, puerto 18789, con token privado.
 
-La cuenta de ChatGPT está autorizada mediante OAuth. Liki está conectado a Telegram y la conversación inicial ya funciona. La plataforma está limitada a `openai/gpt-6-luna`, sin modelos de respaldo; se ha verificado una respuesta real con Luna y el rechazo de una selección explícita de Astra. El acceso de Telegram se genera desde perfiles JSON privados, con solo el administrador activo inicialmente. La gestión manual de usuarios está implementada; el procesamiento de facturas sigue pendiente. Consultar [usuarios de Liki](projects/liquidator/USUARIOS.md).
+La cuenta de ChatGPT está autorizada mediante OAuth. Liki está conectado a Telegram y la conversación inicial ya funciona. La plataforma está limitada a `openai/gpt-6-luna`, sin modelos de respaldo; se ha verificado una respuesta real con Luna y el rechazo de una selección explícita de Astra. El acceso de Telegram se genera desde perfiles JSON privados, con solo el administrador activo inicialmente. La gestión manual de usuarios y el flujo de recepción, lectura y revisión de facturas están implementados. Falta cerrar la prueba real desde el iPhone y desarrollar las liquidaciones. Consultar [usuarios de Liki](projects/liquidator/USUARIOS.md).
 
 Los comandos de administración desde el chat, los grupos y las herramientas del agente Liki están deshabilitados. Las tareas periódicas y los heartbeats están desactivados para evitar consumo en segundo plano. Estos controles se cambian desde el servidor.
 

@@ -1,0 +1,11 @@
+{
+  "telegram_id": "123456789",
+  "nombre": "Usuario de ejemplo",
+  "estado": "pendiente",
+  "rol": "usuario",
+  "datos_informes": {
+    "nombre_completo": "",
+    "identificacion_fiscal": "",
+    "empresa": ""
+  }
+}
