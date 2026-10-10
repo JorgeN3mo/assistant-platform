@@ -41,6 +41,16 @@ rollback() {
 }
 trap rollback EXIT
 systemctl stop openclaw-gateway.service
+# SQLite backup includes the WAL consistently. Keep it private on MiniGUN.
+python3 - "$backup" <<'PY'
+import os, sqlite3, sys
+source = '/data/liquidator/runtime/liquidator.sqlite3'
+if os.path.exists(source):
+    target = os.path.join(sys.argv[1], 'liquidator.sqlite3')
+    with sqlite3.connect('file:' + source + '?mode=ro', uri=True) as src, sqlite3.connect(target) as dst:
+        src.backup(dst)
+    os.chmod(target, 0o600)
+PY
 chgrp openclaw /data/liquidator
 chmod 710 /data/liquidator
 install -d -o openclaw -g openclaw -m 700 /data/liquidator/runtime /data/liquidator/invoices
@@ -89,6 +99,14 @@ os.chmod(temporary, 0o600)
 os.replace(temporary, p)
 PY
 "$repo/scripts/openclaw-admin.sh" config validate
+sudo -u openclaw "$repo/openclaw/runtime/tools/node/bin/node" --input-type=module - "$release/openclaw-plugin/store.mjs" <<'JS'
+const {Store} = await import(process.argv[2]);
+const store = new Store('/data/liquidator');
+store.recoverInterrupted();
+if (store.db.prepare('PRAGMA integrity_check').get().integrity_check !== 'ok') throw new Error('Database integrity check failed');
+console.log('Liquidator: migración e integridad SQLite verificadas.');
+store.close();
+JS
 systemctl daemon-reload
 "$repo/scripts/restart-openclaw.sh"
 "$repo/scripts/openclaw-admin.sh" plugins inspect liquidator --runtime --json > "$backup/plugin-inspection.json"

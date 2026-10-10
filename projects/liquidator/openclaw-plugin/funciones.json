@@ -1,103 +1,236 @@
 {
-  "version": 2,
+  "version": 3,
   "estado": "implementado",
-  "aviso": "Este catálogo lo carga el plugin liquidator al arrancar. Solo controla el bot cuando el plugin está desplegado y activo. Cambios requieren recarga.",
+  "empresas": {
+    "D": "DIBOS",
+    "R": "REDISSA",
+    "RD": "REDISSA & DIBOS"
+  },
+  "campos": {
+    "empresa": {
+      "nombre": "Empresa",
+      "tipo": "empresa",
+      "obligatorio": true,
+      "extraido": true
+    },
+    "numero": {
+      "nombre": "Número completo",
+      "tipo": "texto",
+      "obligatorio": true,
+      "extraido": true
+    },
+    "fecha_factura": {
+      "nombre": "Fecha factura",
+      "tipo": "fecha",
+      "obligatorio": true,
+      "extraido": true
+    },
+    "codigo_cliente": {
+      "nombre": "Código cliente",
+      "tipo": "texto",
+      "obligatorio": true,
+      "extraido": true
+    },
+    "cliente": {
+      "nombre": "Cliente",
+      "tipo": "texto",
+      "obligatorio": true,
+      "extraido": true
+    },
+    "establecimiento": {
+      "nombre": "Establecimiento",
+      "tipo": "texto",
+      "obligatorio": false,
+      "extraido": true
+    },
+    "importe": {
+      "nombre": "Importe",
+      "tipo": "importe",
+      "obligatorio": true,
+      "extraido": true
+    },
+    "banco": {
+      "nombre": "Banco",
+      "tipo": "texto",
+      "obligatorio": false,
+      "extraido": false
+    },
+    "vencimiento": {
+      "nombre": "Vencimiento",
+      "tipo": "fecha",
+      "obligatorio": false,
+      "extraido": false
+    },
+    "fecha_transferencia": {
+      "nombre": "Fecha transferencia",
+      "tipo": "fecha",
+      "obligatorio": false,
+      "extraido": false
+    }
+  },
+  "metodos": {
+    "efectivo": {
+      "nombre": "Efectivo",
+      "obligatorios": []
+    },
+    "tarjeta": {
+      "nombre": "Tarjeta",
+      "obligatorios": []
+    },
+    "transferencia": {
+      "nombre": "Transf.",
+      "obligatorios": [
+        "fecha_transferencia"
+      ]
+    },
+    "pagare": {
+      "nombre": "Pagaré recibido",
+      "obligatorios": [
+        "banco",
+        "vencimiento"
+      ]
+    }
+  },
+  "limites": {
+    "ayuda_diaria": 20,
+    "ayuda_minuto": 4,
+    "pregunta_caracteres": 600,
+    "respuesta_tokens": 512,
+    "ayuda_segundos": 25
+  },
   "funciones": [
     {
       "id": "ayuda",
-      "entrada": "/start o /ayuda",
-      "habilitada": true,
-      "estados_permitidos": [
-        "activo"
+      "comandos": [
+        "start",
+        "ayuda"
       ],
+      "habilitada": true,
+      "descripcion": "Menú de funciones.",
+      "ayuda": "Envía una foto de una factura o consulta /d, /r o /rd. /pendientes muestra lo que falta revisar. /historial muestra liquidaciones anteriores.",
       "usa_llm": false
     },
     {
       "id": "recibir_factura",
-      "entrada": "foto JPG/PNG o documento PDF hasta 10 MiB",
+      "comandos": [],
       "habilitada": true,
-      "estados_permitidos": [
-        "activo"
-      ],
+      "descripcion": "Guardar una foto o PDF.",
+      "ayuda": "Envía una foto JPG/PNG de una sola factura (máximo 10 MiB). Se guarda antes de leerla. El fondo puede tener ruido. PDF se guarda para completar manualmente.",
       "usa_llm": false
     },
     {
       "id": "extraer_factura",
-      "entrada": "foto nueva o botón Reintentar lectura",
+      "comandos": [],
       "habilitada": true,
-      "estados_permitidos": [
-        "activo"
-      ],
+      "descripcion": "Leer datos de una foto.",
+      "ayuda": "Revisa siempre la ficha. Volver a leer la foto solo aparece si falló la lectura o faltan datos esenciales; no cambia la forma de cobro.",
       "usa_llm": true
     },
     {
-      "id": "consultar_facturas",
-      "entrada": "/pendientes o /ver REFERENCIA",
-      "habilitada": true,
-      "estados_permitidos": [
-        "activo"
+      "id": "consultar_listas",
+      "comandos": [
+        "d",
+        "r",
+        "rd"
       ],
+      "habilitada": true,
+      "descripcion": "Consultar lista actual y totales de una empresa.",
+      "ayuda": "Usa /d para DIBOS, /r para REDISSA y /rd para REDISSA & DIBOS. Verás código cliente, cuatro últimos dígitos, importe, método y totales. Pulsa una factura para abrirla.",
+      "usa_llm": false
+    },
+    {
+      "id": "consultar_facturas",
+      "comandos": [
+        "ver",
+        "pendientes"
+      ],
+      "habilitada": true,
+      "descripcion": "Abrir factura por número y empresa.",
+      "ayuda": "Usa /ver 9072 D (cuatro últimos dígitos y D, R o RD). Se busca primero en la lista nueva de esa empresa; si hay varias coincidencias eliges un botón. /pendientes muestra fichas sin aceptar, incluidas las que no tienen empresa.",
       "usa_llm": false
     },
     {
       "id": "corregir_factura",
-      "entrada": "/corregir REFERENCIA VERSION CAMPO VALOR",
-      "habilitada": true,
-      "estados_permitidos": [
-        "activo"
+      "comandos": [
+        "cancelar"
       ],
+      "habilitada": true,
+      "descripcion": "Edición guiada de campos.",
+      "ayuda": "Abre una factura, pulsa Corregir, elige el campo y envía su valor. /cancelar abandona la edición. Los cambios requieren aceptar de nuevo. En una liquidación cerrada debes reabrirla primero.",
       "usa_llm": false
     },
     {
       "id": "cambiar_cobro",
-      "entrada": "botón efectivo, tarjeta o transferencia",
+      "comandos": [],
       "habilitada": true,
-      "estados_permitidos": [
-        "activo"
-      ],
+      "descripcion": "Elegir efectivo, tarjeta, transferencia o pagaré.",
+      "ayuda": "Efectivo es el valor inicial. Transferencia exige fecha de transferencia. Pagaré recibido exige banco y vencimiento. Al elegirlos se piden los datos que faltan. Fechas AAAA-MM-DD o DD/MM/AAAA. Pagaré recibido no significa hecho efectivo.",
       "usa_llm": false
     },
     {
       "id": "confirmar_cobro",
-      "entrada": "botón Confirmar",
+      "comandos": [],
       "habilitada": true,
-      "estados_permitidos": [
-        "activo"
-      ],
+      "descripcion": "Aceptar una factura revisada.",
+      "ayuda": "Pulsa Aceptar después de comparar empresa, número completo, fecha, código cliente, cliente, importe y cobro con el documento. Si faltan datos o hay un duplicado se bloquea. El asistente no puede asegurar que una foto esté bien leída ni aceptarla por ti.",
       "usa_llm": false
     },
     {
-      "id": "descartar_factura",
-      "entrada": "botón Descartar",
+      "id": "eliminar_factura",
+      "comandos": [],
       "habilitada": true,
-      "estados_permitidos": [
-        "activo"
+      "descripcion": "Borrar una factura y su original del almacenamiento activo.",
+      "ayuda": "Abre la factura, pulsa Eliminar y confirma. Se quita de la lista, de la base activa y del archivo de originales. Una liquidación cerrada debe reabrirse antes. No se pueden retirar copias ya descargadas o enviadas a Telegram.",
+      "usa_llm": false
+    },
+    {
+      "id": "cerrar_liquidacion",
+      "comandos": [
+        "cerrar"
       ],
+      "habilitada": true,
+      "descripcion": "Cerrar por separado una lista revisada.",
+      "ayuda": "Usa /cerrar D, /cerrar R o /cerrar RD, revisa el total y confirma. Todas las facturas deben estar aceptadas y completas. Las nuevas fotos de esa empresa van a una nueva lista.",
       "usa_llm": false
     },
     {
-      "id": "solicitar_acceso",
-      "habilitada": false,
-      "estado": "pendiente",
+      "id": "historial",
+      "comandos": [
+        "historial",
+        "liquidacion"
+      ],
+      "habilitada": true,
+      "descripcion": "Consultar liquidaciones anteriores.",
+      "ayuda": "Usa /historial y elige un botón, o /liquidacion 12. Cada liquidación tiene empresa, número corto y estado. Las otras empresas no se cierran al cerrar una.",
       "usa_llm": false
     },
     {
-      "id": "consultar_solicitud",
-      "habilitada": false,
-      "estado": "pendiente",
+      "id": "reabrir_liquidacion",
+      "comandos": [
+        "reabrir"
+      ],
+      "habilitada": true,
+      "descripcion": "Corregir una liquidación anterior.",
+      "ayuda": "Usa /reabrir 12 y confirma. Se puede editar su contenido; las fotos nuevas siguen en la lista nueva. Vuelve a cerrarla desde su ficha cuando termines. Se invalida el CSV anterior en el servidor.",
       "usa_llm": false
     },
     {
-      "id": "generar_liquidacion",
-      "habilitada": false,
-      "estado": "pendiente",
+      "id": "exportar_liquidacion",
+      "comandos": [
+        "exportar"
+      ],
+      "habilitada": true,
+      "descripcion": "Descargar el CSV de una liquidación cerrada.",
+      "ayuda": "Usa /exportar 12 o pulsa Descargar CSV en la liquidación cerrada. Incluye código, factura abreviada y completa, importe, método, banco y fecha correspondiente. Cada nuevo cierre produce una versión distinta.",
       "usa_llm": false
     },
     {
-      "id": "presentar_liquidacion",
-      "habilitada": false,
-      "estado": "pendiente",
-      "usa_llm": false
+      "id": "ayuda_llm",
+      "comandos": [],
+      "habilitada": true,
+      "descripcion": "Ayuda sobre el funcionamiento, sin ejecutar acciones.",
+      "ayuda": "Puedes preguntar cómo editar, consultar o cerrar. La ayuda no ve tus fotos ni listas y nunca cambia datos. Fuera de Liquidator no responde. Límite de 20 consultas al día y 4 por minuto.",
+      "usa_llm": true
     }
   ]
 }

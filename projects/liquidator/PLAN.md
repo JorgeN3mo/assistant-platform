@@ -2,33 +2,28 @@
 
 | Bloque | Alcance | Estado |
 |---|---|---|
-| 1. Base y despliegue | Repositorio, MiniGUN, servicio y Telegram | Operativo |
-| 2. Acceso y funciones | Perfiles privados, allowlist y acciones cerradas | Desplegado; avisos de solicitudes aplazados |
-| 3. Factura completa hasta revisión | Original privado, SQLite, lectura, cobro y confirmación | Desplegado y validado en MiniGUN; pendiente recorrido real desde iPhone |
-| 4. Liquidaciones | Seleccionar facturas, cerrar lote y generar fichero | Pendiente |
-| 5. Presentación y operación | Marcar presentación, correcciones posteriores, copias y recuperación | Pendiente |
+| 1. Base y despliegue | Repositorio único, Mac → Git → MiniGUN, servicio y Telegram | Operativo |
+| 2. Acceso y funciones | Perfiles privados, allowlist, catálogo y ayuda Luna sin acciones | Implementado; solicitudes y avisos administrativos aplazados |
+| 3. Factura y revisión | Original privado, lectura, edición guiada, cuatro cobros y aceptación | Implementado; validar experiencia actual desde iPhone |
+| 4. Liquidaciones | Tres listas, totales, cierre independiente, CSV, historial y reapertura | Implementado; validar listas, botones y descarga desde iPhone |
+| 5. Presentación y operación | Documento definitivo, registrar entrega, copias periódicas y recuperación | Pendiente |
 
-Validación del servidor completada el 10 de octubre de 2026: [resultados](VALIDACION.md).
+Estamos en la validación integrada de los bloques 3 y 4. Ver [prueba móvil](FACTURAS.md)
+y [evidencias técnicas](VALIDACION.md). No considerar la prueba del backend como
+certificación de que Telegram entrega correctamente todas las pantallas y archivos.
 
-## Cierre del bloque 3
+## Siguientes pasos
 
-Enviar foto desde el usuario ya autorizado, comprobar ficha y botones, guardar el
-cobro correcto y confirmar. Verificar original y base de datos, reenvío sin duplicados
-y consulta tras reiniciar. Probar otra foto con fondo y una lectura incompleta.
-Todavía no dar por validado el transporte móvil solo con tests locales o lectura API.
+1. Ejecutar el recorrido real desde el iPhone con las fotos aportadas: comparar,
+   corregir, cambiar método, aceptar, listar, cerrar, descargar y reabrir.
+2. Ajustar únicamente los problemas observados de lectura o interfaz.
+3. Revisar un ejemplo del documento que se presenta y decidir su formato final;
+   por ahora CSV, con las columnas acordadas y total.
+4. Separar cierre de liquidación y presentación: registrar esta última cuando se
+   entregue, con fecha propia y sin imponer viernes fijo.
+5. Establecer copia periódica privada, retención y prueba de recuperación antes
+   de usarlo como único registro habitual. La copia previa al despliegue no sustituye
+   un sistema de copias.
 
-## Siguiente bloque: liquidaciones
-
-1. Definir las columnas y formato del fichero que se presenta (con un ejemplo real
-   anonimizado cuando esté disponible). Incluir emisor, cliente, factura, importe
-   y forma de cobro; separar totales por empresa y efectivo/tarjeta/transferencia.
-2. Elegir facturas confirmadas de ese usuario y mostrar un resumen previo.
-3. Crear un ID de liquidación y una fecha de generación; asociar sus facturas en una
-   transacción. Evitar que una misma factura pertenezca a dos liquidaciones.
-4. Generar y conservar el fichero a partir del lote congelado; poder descargarlo de
-   nuevo sin crear otro lote ni recalcular datos cambiantes.
-5. Registrar la presentación como acción posterior con fecha propia. No asumir viernes
-   fijo ni usar la fecha de factura para decidir la semana de liquidación.
-
-Fuera de este hito: cobros parciales, múltiples páginas, OCR alternativo, alta pública,
-Webmaster y contabilidad completa. Antes de uso habitual: resolver copias y recuperación.
+Aplazados: alta pública y avisos de solicitudes, cobros parciales, facturas de varias
+páginas, lectura automática de PDF, contabilidad completa y Webmaster.

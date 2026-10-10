@@ -20,7 +20,7 @@ export const SCHEMA = {
 const authorityKey = Symbol.for('assistant-platform.liquidator.active-extractions.v1');
 const activeRuns = process[authorityKey] ??= new Set();
 export const isExtractionRun = id => activeRuns.has(id);
-export async function extract(runtime, cfg, record) {
+export async function runLuna(runtime, cfg, {prompt, images, workspaceDir, purpose='help', timeoutMs=25000, maxTokens=512}) {
   const runId = randomUUID(), sessionId = randomUUID();
   const primary = cfg.agents?.entries?.liki?.model?.primary ?? cfg.agents?.defaults?.model?.primary;
   if (typeof primary !== 'string' || primary.split('@')[0] !== 'openai/' + MODEL) throw new Error('Luna policy missing');
@@ -29,19 +29,22 @@ export async function extract(runtime, cfg, record) {
   try {
     const output = await runtime.agent.runEmbeddedAgent({
       config: cfg, agentId: 'liki', agentDir: runtime.agent.resolveAgentDir(cfg, 'liki'),
-      workspaceDir: path.dirname(record.original), sessionId, sessionKey: `agent:liki:liquidator-extract:${sessionId}`,
+      workspaceDir, sessionId, sessionKey: `agent:liki:liquidator-${purpose}:${sessionId}`,
       sessionPersistence: 'detached', runId, provider: 'openai', model: MODEL,
       ...(at >= 0 ? {authProfileId: primary.slice(at + 1)} : {}),
-      prompt: extractionPrompt(),
-      images: [{type: 'image', data: fs.readFileSync(record.original).toString('base64'), mimeType: record.mime}],
+      prompt, ...(images ? {images} : {}),
       modelRun: true, disableTools: true, disableMessageTool: true, disableTrajectory: true,
-      modelFallbacksOverride: [], thinkLevel: 'low', timeoutMs: 60000,
-      runTimeoutOverrideMs: 60000, retryConnectionErrors: false, trigger: 'manual'
+      modelFallbacksOverride: [], thinkLevel: 'low', timeoutMs,
+      streamParams: {maxTokens}, runTimeoutOverrideMs: timeoutMs, retryConnectionErrors: false, trigger: 'manual'
     });
-    if (output.meta?.error || output.payloads?.some(p => p.isError)) throw new Error('Extraction runtime failed');
+    if (output.meta?.error || output.payloads?.some(p => p.isError)) throw new Error('Model runtime failed');
     const text = output.payloads?.filter(p => !p.isReasoning && !p.isCommentary).map(p => p.text ?? '').join('\n').trim().replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
     return JSON.parse(text);
   } finally { activeRuns.delete(runId); }
+}
+export async function extract(runtime, cfg, record) {
+  return runLuna(runtime,cfg,{purpose:'extract',workspaceDir:path.dirname(record.original),prompt:extractionPrompt(),
+    images:[{type:'image',data:fs.readFileSync(record.original).toString('base64'),mimeType:record.mime}],timeoutMs:60000,maxTokens:1800});
 }
 export function extractionPrompt() {
   return INSTRUCTIONS + '\nATENCIÓN AL NÚMERO: en estos formatos, bajo «Nº de Factura» aparecen DOS elementos: una serie/año (por ejemplo 2/2025) y, a su derecha, el número correlativo (por ejemplo 12345), antes de la columna Forma de Pago. Ambos forman la referencia: «2/2025 12345». No devuelvas solo la serie/año. Mira toda esa fila. Si el correlativo no se puede leer, numero=null y explica la duda.\nEsquema JSON: ' + JSON.stringify(SCHEMA);

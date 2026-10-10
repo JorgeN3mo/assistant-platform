@@ -77,7 +77,7 @@ La herramienta presupone que Liki es la única cuenta Telegram y se detiene si s
 
 ## Alcance actual
 
-El perfil inicial del administrador está activo. No se crean usuarios desde Telegram. El registro de facturas, los informes y el aislamiento completo de archivos siguen pendientes.
+El perfil inicial del administrador está activo. No se crean usuarios desde Telegram. Las facturas, liquidaciones y CSV se separan por usuario y se comprueba la propiedad en cada acción. El alta desde Telegram y los avisos de solicitudes siguen aplazados.
 
 Pruebas locales:
 

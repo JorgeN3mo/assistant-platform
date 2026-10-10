@@ -1,7 +1,7 @@
 {
   "id": "liquidator",
   "name": "Liquidator",
-  "description": "Recepción y revisión de facturas con acceso cerrado, sin conversación libre.",
+  "description": "Facturas, liquidaciones por empresa y ayuda del manual con acceso cerrado.",
   "activation": {"onStartup": true},
   "configSchema": {
     "type": "object",

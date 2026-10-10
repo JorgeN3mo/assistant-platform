@@ -34,6 +34,7 @@ export default {
       if (!context.auth.isAuthorizedSender) return {handled: true};
       try {
         const result = await controller.callback({account: context.accountId, sender: String(context.senderId ?? ''), isGroup: context.isGroup, data: context.callback.payload});
+        if (result?.submitText) return {handled: true, submitText: result.submitText};
         if (result) await context.respond.reply(result);
       } catch (error) {
         if (controller.permitted(context.accountId, String(context.senderId ?? ''), context.isGroup)) await context.respond.reply({text: error instanceof UserError ? error.message : 'No se pudo completar la acción. Abre /pendientes.'});

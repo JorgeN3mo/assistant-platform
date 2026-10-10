@@ -1,7 +1,7 @@
 # Liquidator
 
 Bot de Telegram para registrar facturas ya cobradas y preparar su posterior liquidación.
-Recepción, lectura de fotos y revisión implementadas. Liquidaciones pendientes.
+Recepción, lectura, revisión, liquidaciones por empresa, CSV y ayuda limitada implementados.
 El cierre de la prueba requiere enviar una foto desde el iPhone al bot y verificarla.
 
 ## Dónde está cada cosa
@@ -11,7 +11,9 @@ projects/liquidator/
 ├── profile.example.json   # Ejemplo ficticio del perfil de usuario
 ├── users.py               # Administración de perfiles y acceso efectivo
 ├── openclaw-plugin/
-│   ├── funciones.json     # Acciones habilitadas, leídas al arrancar
+│   ├── funciones.json     # Contrato: empresas, campos, métodos, acciones, manual y límites
+│   ├── catalog.mjs        # Lectura del contrato
+│   ├── help.mjs           # Luna selecciona ayuda del manual, sin ejecutar acciones
 │   ├── index.js           # Entrada JavaScript nativa de OpenClaw
 │   ├── plugin.mjs         # Intercepta mensajes, botones y bloquea chat libre
 │   ├── controller.mjs     # Acciones cerradas, acceso y fichas de revisión
@@ -35,11 +37,12 @@ projects/liquidator/
     └── metadata.json                         # Recibo inmutable del guardado
 
 /data/openclaw/state/openclaw.json             # Lista efectiva de Telegram
+/data/openclaw/state/media/liquidator-exports/ # CSV privados por usuario y versión
 ```
 
 Después de cambiar perfiles: `scripts/usuarios.sh aplicar`. No editar varias listas
 manualmente. Los comandos, botones y remitentes se validan antes de invocar Luna.
-Texto ajeno al menú produce una respuesta fija; desconocidos y grupos no se procesan.
+Texto ajeno al menú consulta la ayuda del manual con límites; desconocidos y grupos no se procesan.
 Solicitudes de acceso y avisos al administrador siguen aplazados.
 
 ## Desarrollo y despliegue
@@ -64,7 +67,9 @@ scripts/openclaw-admin.sh plugins inspect liquidator --runtime --json
 El despliegue publica una copia del código de Git bajo `openclaw/runtime/local-plugins/liquidator/<commit>`,
 propiedad de root y sin escritura para el servicio. Enlaza ese plugin, habilita sus hooks, añade botones de Telegram y
 permiso de escritura únicamente en `invoices` y `runtime`. Conserva usuarios y
-credenciales. Hace copia privada de la configuración; ante fallo restaura la previa.
+credenciales. Hace copia privada de SQLite y configuración, migra y comprueba integridad; ante fallo
+restaura la configuración previa. La base no se rebobina automáticamente para no perder
+cambios: la migración es aditiva y su copia queda para recuperación administrativa.
 Cambios de código o de `funciones.json` requieren commit, pull y nuevo despliegue.
 Desactivar el plugin por sí solo restaura el comportamiento conversacional
 anterior: para detener Liki sin consumo, detener el servicio o desactivar su cuenta.
