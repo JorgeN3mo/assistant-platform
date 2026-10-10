@@ -126,8 +126,9 @@ test('plugin installs fallback model gate and always claims Liki updates',async 
 });
 test('vision request is isolated, uses only configured Luna, no tools, and releases run authority',async t=>{
  const f=fixture(t);const {extract,isExtractionRun}=await import('./extract.mjs');let observed;
+ const otherInstance=await import('./extract.mjs?second-captured-instance');
  const cfg={agents:{entries:{liki:{model:{primary:'openai/gpt-6-luna@openai:test'}}}}};
- const rt={agent:{resolveAgentDir:()=>'/unused',runEmbeddedAgent:async p=>{observed=p;assert.equal(isExtractionRun(p.runId),true);return {meta:{},payloads:[{text:JSON.stringify(invoice)}]};}}};
+ const rt={agent:{resolveAgentDir:()=>'/unused',runEmbeddedAgent:async p=>{observed=p;assert.equal(isExtractionRun(p.runId),true);assert.equal(otherInstance.isExtractionRun(p.runId),true);return {meta:{},payloads:[{text:JSON.stringify(invoice)}]};}}};
  assert.deepEqual(await extract(rt,cfg,{original:f.source,mime:'image/png'}),invoice);
  assert.equal(observed.model,'gpt-6-luna');assert.equal(observed.authProfileId,'openai:test');assert.equal(observed.disableTools,true);assert.equal(observed.modelRun,true);assert.deepEqual(observed.modelFallbacksOverride,[]);assert.equal(observed.sessionPersistence,'detached');assert.equal(isExtractionRun(observed.runId),false);
  cfg.agents.entries.liki.model.primary='openai/other';await assert.rejects(extract(rt,cfg,{original:f.source,mime:'image/png'}),/Luna policy/);
