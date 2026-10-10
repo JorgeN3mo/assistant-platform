@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "engines": {"node": ">=22.16"},
-  "openclaw": {"extensions": ["./index.ts"]},
+  "openclaw": {"extensions": ["./index.js"]},
   "scripts": {"test": "node --test *.test.mjs"}
 }

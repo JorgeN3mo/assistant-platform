@@ -79,4 +79,12 @@ PY
 "$repo/scripts/openclaw-admin.sh" config validate
 systemctl daemon-reload
 "$repo/scripts/restart-openclaw.sh"
+"$repo/scripts/openclaw-admin.sh" plugins inspect liquidator --runtime --json > "$backup/plugin-inspection.json"
+python3 - "$backup/plugin-inspection.json" <<'PY'
+import json, sys
+with open(sys.argv[1]) as f:
+    r = json.load(f)
+p = r['plugin']
+assert p['status'] == 'loaded' and p['hookCount'] >= 2 and 'liquidator' in p['services'], p.get('error', 'Plugin incompleto')
+PY
 echo "Liquidator activado. Copia de configuración privada: $backup"

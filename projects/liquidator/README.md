@@ -12,7 +12,7 @@ projects/liquidator/
 ├── profile.example.json   # Ejemplo ficticio del perfil de usuario
 ├── users.py               # Administración de perfiles y acceso efectivo
 ├── openclaw-plugin/
-│   ├── index.ts           # Entrada nativa de OpenClaw
+│   ├── index.js           # Entrada JavaScript nativa de OpenClaw
 │   ├── plugin.mjs         # Intercepta mensajes, botones y bloquea chat libre
 │   ├── controller.mjs     # Acciones cerradas, acceso y fichas de revisión
 │   ├── extract.mjs        # Instrucciones de lectura con Luna, sin herramientas
