@@ -3,11 +3,13 @@
 | Bloque | Alcance | Estado |
 |---|---|---|
 | 1. Base y despliegue | Repositorio único, Mac → Git → MiniGUN, servicio y Telegram | Operativo |
-| 2. Acceso y funciones | Perfiles privados, allowlist, catálogo y ayuda Luna sin acciones | Implementado; solicitudes y avisos administrativos aplazados |
+| 2. Acceso y funciones | Perfiles privados, allowlist, catálogo y ayuda Luna personalizada sin acciones | Implementado; solicitudes y avisos administrativos aplazados |
 | 3. Factura y revisión | Original privado, lectura, edición guiada, cuatro cobros y aceptación | Implementado; validar experiencia actual desde iPhone |
 | 4. Liquidaciones | Tres listas, totales, cierre independiente, CSV, historial y reapertura | Implementado; validar listas, botones y descarga desde iPhone |
 | 5. Presentación y operación | Documento definitivo, registrar entrega, copias periódicas y recuperación | Pendiente |
 
+La ayuda personalizada, el contexto breve y sus límites se desplegaron y validaron
+con Luna real el 11 de octubre de 2026. Falta la comprobación de experiencia móvil.
 Estamos en la validación integrada de los bloques 3 y 4. Ver [prueba móvil](FACTURAS.md)
 y [evidencias técnicas](VALIDACION.md). No considerar la prueba del backend como
 certificación de que Telegram entrega correctamente todas las pantallas y archivos.
