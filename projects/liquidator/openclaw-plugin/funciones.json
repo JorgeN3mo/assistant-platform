@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "estado": "implementado",
   "empresas": {
     "D": "DIBOS",
@@ -161,7 +161,7 @@
       ],
       "habilitada": true,
       "descripcion": "Edición guiada de campos.",
-      "ayuda": "Abre una factura, pulsa Corregir, elige el campo y envía su valor. /cancelar abandona la edición. Los cambios requieren aceptar de nuevo. En una liquidación cerrada debes reabrirla primero.",
+      "ayuda": "La ficha muestra Aceptar, Corregir y Eliminar. Pulsa Corregir, elige el campo y envía su valor. Cancelar vuelve a la ficha desde el menú o la entrada de valores; /cancelar también abandona la edición. No deshace cambios ya guardados. Los cambios requieren aceptar de nuevo. Volver a leer la foto está dentro de Corregir cuando hay dudas u omisiones. En una liquidación cerrada debes reabrirla primero. Las listas se abren con /d, /r o /rd.",
       "usa_llm": false
     },
     {
@@ -169,7 +169,7 @@
       "comandos": [],
       "habilitada": true,
       "descripcion": "Elegir efectivo, tarjeta, transferencia o pagaré.",
-      "ayuda": "En la ficha de la factura pulsa directamente uno de los botones Efectivo, Tarjeta, Transferencia o Pagaré. El método de cobro NO es un campo del menú Corregir. Efectivo es el valor inicial. Transferencia exige fecha de transferencia; Pagaré recibido exige banco y vencimiento. Al pulsar el método se piden los datos que faltan. Fechas AAAA-MM-DD o DD/MM/AAAA. Después pulsa Aceptar. Pagaré recibido no significa hecho efectivo.",
+      "ayuda": "En la ficha pulsa Corregir, después Método de pago y elige Efectivo, Tarjeta, Transferencia o Pagaré. Efectivo es el valor inicial. Transferencia exige fecha de transferencia; Pagaré recibido exige banco y después vencimiento. Al elegir el método se piden los datos que faltan. Fechas AAAA-MM-DD o DD/MM/AAAA. Después pulsa Aceptar. Cancelar sale a la ficha sin deshacer cambios ya guardados; no se permite aceptar mientras falten datos. Pagaré recibido no significa hecho efectivo.",
       "usa_llm": false
     },
     {

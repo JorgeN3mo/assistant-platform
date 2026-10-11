@@ -4,9 +4,13 @@
    tener ruido de fondo, pero debe verse una factura principal completa.
 2. Revisa empresa, número completo, fecha, código cliente, cliente e importe.
    Efectivo es el valor inicial; el texto «REPOSICION» no decide cómo has cobrado.
-3. Prueba Transferencia: se exige fecha. Prueba Pagaré: se pide banco y después
+   La ficha debe mostrar solo Aceptar, Corregir y Eliminar.
+3. Pulsa Corregir → Método de pago. Prueba Transferencia: se exige fecha.
+   Prueba Pagaré: se pide banco y después
    vencimiento. Acepta fechas AAAA-MM-DD o DD/MM/AAAA. No permite aceptar incompletos.
-4. Pulsa Corregir, elige un campo y envía el valor. `/cancelar` sale de la edición.
+4. Pulsa Corregir, elige un campo y envía el valor. Prueba Cancelar en el menú,
+   en Método de pago y durante la entrada de un valor: vuelve a la ficha sin
+   introducir otro valor ni deshacer los ya guardados. `/cancelar` también sale.
    Pulsa Aceptar cuando todo sea correcto. Puedes corregirlo después y aceptar otra vez.
 5. Usa `/d`, `/r` o `/rd`. Verás código cliente, cuatro últimos dígitos de factura,
    importe y método; debajo, banco/vencimiento o fecha de transferencia si procede.
@@ -23,7 +27,7 @@
    cerré?» para probar el contexto. `/ayuda` lo reinicia. No puede modificar ni
    comprobar las facturas por ti.
 
-No hace falta una foto perfecta. «Volver a leer la foto» aparece cuando hay dudas
+No hace falta una foto perfecta. «Volver a leer la foto» aparece en Corregir cuando hay dudas
 u omisiones; conserva el método y los datos de cobro introducidos. Una nueva foto
 del mismo documento se detecta como duplicado al aceptar por empresa+número.
 PDF se guarda sin lectura automática; varias páginas y cobros parciales quedan fuera.

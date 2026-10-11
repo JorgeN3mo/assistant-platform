@@ -169,6 +169,41 @@ test('independent companies, close confirmation, stale summaries and reopening p
  await assert.rejects(f.c.callback({account:'liki',sender:'102',isGroup:false,data:`b:${b.id}:${b.revision}:view`}),/tu usuario/);
 });
 
+test('three-button invoice navigates payment correction and cancels without accepting incomplete data',async t=>{
+ const f=fixture(t);let reply=(await f.incoming())[0];
+ const labels=r=>r.buttons.flat().map(b=>b.text);
+ const click=async(text)=>{const b=reply.buttons.flat().find(b=>b.text===text);assert.ok(b,'Missing button '+text);reply=await f.c.callback({account:'liki',sender:'101',isGroup:false,data:b.callback_data});return reply;};
+ const top=['Aceptar','Corregir','Eliminar'];
+ assert.deepEqual(labels(reply),top);assert.match(reply.text,/Método: Efectivo/);
+ const initial=f.c.store.list('101')[0];
+ await click('Corregir');assert.ok(labels(reply).includes('Método de pago'));assert.ok(!labels(reply).includes('Transferencia'));
+ await click('Cancelar');assert.deepEqual(labels(reply),top);assert.equal(f.c.store.get('101',initial.id).revision,initial.revision);
+ await click('Corregir');await click('Método de pago');assert.deepEqual(labels(reply),['Efectivo','Tarjeta','Transferencia','Pagaré','Cancelar']);
+ await click('Cancelar');assert.match(reply.text,/Método: Efectivo/);
+ await click('Corregir');await click('Método de pago');await click('Transferencia');assert.match(reply.text,/fecha transferencia/i);
+ await click('Cancelar');assert.equal(f.c.store.pendingEdit('101'),null);assert.deepEqual(labels(reply),top);
+ await assert.rejects(click('Aceptar'),/Fecha transferencia/);
+ await click('Corregir');await click('Método de pago');await click('Transferencia');
+ reply=(await f.incoming({media:[],text:'11/10/2026',messageId:'date'}))[0];assert.deepEqual(labels(reply),top);
+ await click('Aceptar');assert.match(reply.text,/Aceptada/);
+ await click('Corregir');await click('Método de pago');await click('Pagaré');assert.match(reply.text,/banco/i);
+ reply=(await f.incoming({media:[],text:'Banco de prueba',messageId:'bank'}))[0];assert.match(reply.text,/vencimiento/i);
+ await click('Cancelar');assert.equal(f.c.store.pendingEdit('101'),null);assert.match(reply.text,/Banco de prueba/);await assert.rejects(click('Aceptar'),/Vencimiento/);
+ await click('Corregir');await click('Método de pago');await click('Pagaré');assert.match(reply.text,/vencimiento/i);
+ reply=(await f.incoming({media:[],text:'31/12/2026',messageId:'due'}))[0];await click('Aceptar');assert.match(reply.text,/Aceptada/);
+ await click('Corregir');await click('Método de pago');await click('Tarjeta');assert.deepEqual(labels(reply),top);assert.equal(f.c.store.pendingEdit('101'),null);
+ const r=f.c.store.get('101',initial.id);assert.equal(r.payment,'tarjeta');assert.equal(r.data.banco,undefined);assert.equal(r.data.vencimiento,undefined);
+ await click('Corregir');await click('Importe');await click('Cancelar');assert.equal(f.c.store.pendingEdit('101'),null);assert.equal(f.c.store.get('101',initial.id).data.importe,'141.59');
+});
+
+test('uncertain photo keeps three primary actions and offers rereading inside correction',async t=>{
+ const f=fixture(t,{extractor:async()=>({...invoice,dudas:['Número poco claro']})});const reply=(await f.incoming())[0],r=f.c.store.list('101')[0];
+ assert.deepEqual(reply.buttons.flat().map(b=>b.text),['Aceptar','Corregir','Eliminar']);
+ const edit=await cb(f,r,'edit');assert.ok(edit.buttons.flat().some(b=>b.text==='Volver a leer la foto'));assert.equal(edit.buttons.at(-1)[0].text,'Cancelar');
+ const stale=r;f.c.store.change('101',r.id,r.revision,'payment','tarjeta');await assert.rejects(cb(f,stale,'methods'),/ha cambiado/);
+ await assert.rejects(f.c.callback({account:'liki',sender:'102',isGroup:false,data:`i:${r.id}:${r.revision}:methods`}),/tu usuario/);
+});
+
 test('payment wizard requires valid extra fields, survives restart and rejects stale edits',async t=>{
  const f=fixture(t);let r=await addInvoice(f);
  let reply=await cb(f,r,'pagare');assert.match(reply.text,/banco/i);

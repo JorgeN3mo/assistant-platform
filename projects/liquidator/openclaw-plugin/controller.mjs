@@ -31,11 +31,7 @@ export function buttons(r){
   if(r.batch?.state==='cerrada')return [[batchButton(r.batch,'Ver liquidación','view')]];
   if(!['guardada','revision','pendiente_liquidar'].includes(r.state))return [];
   const b=(text,action)=>invoiceButton(r,text,action);
-  const rows=[...(r.state==='pendiente_liquidar'?[]:[[b('Aceptar','confirm')]]),[b('Corregir','edit'),b('Eliminar','delete')],
-    [b('Efectivo','efectivo'),b('Tarjeta','tarjeta')],[b('Transferencia','transferencia'),b('Pagaré','pagare')]];
-  if(r.mime!=='application/pdf'&&r.state!=='pendiente_liquidar'&&(r.warnings.length||['empresa','numero','importe'].some(k=>!r.data[k])))rows.push([b('Volver a leer la foto','retry')]);
-  if(r.batch)rows.push([batchButton(r.batch,'Ver lista','view')]);
-  return rows;
+  return [[b('Aceptar','confirm'),b('Corregir','edit'),b('Eliminar','delete')]];
 }
 const sheet=r=>message(ficha(r),buttons(r));
 function requireFunction(id){if(!enabled(id))throw new UserError('Función desactivada.');}
@@ -182,7 +178,7 @@ export class Controller {
       // command through normal ingress, whose dispatcher can deliver documents.
       return {submitText:`/exportar ${b.id}`};
     }
-    const m=/^(?:i:)?([a-f0-9]{24}):(\d+):(view|confirm|edit|f\d{1,2}|efectivo|tarjeta|transferencia|pagare|retry|discard|delete|deleteyes|cancel)$/.exec(d);
+    const m=/^(?:i:)?([a-f0-9]{24}):(\d+):(view|confirm|edit|methods|f\d{1,2}|efectivo|tarjeta|transferencia|pagare|retry|discard|delete|deleteyes|cancel)$/.exec(d);
     if(!m)throw new UserError('Botón no válido. Abre de nuevo la lista.');
     const [,id,v,a]=m,r=this.store.get(sender,id),revision=Number(v);
     if(a==='view'){requireFunction('consultar_facturas');return sheet(r);}
@@ -190,7 +186,18 @@ export class Controller {
     this.store.editable(r,revision);
     if(a==='edit'){
       requireFunction('corregir_factura');const fields=EDIT_FIELDS.filter(k=>catalog.campos[k].extraido||catalog.metodos[r.payment].obligatorios.includes(k));
-      return message('¿Qué dato quieres corregir?',fields.map(k=>[invoiceButton(r,catalog.campos[k].nombre,'f'+EDIT_FIELDS.indexOf(k))]));
+      this.store.cancelEdit(sender);
+      const rows=[[invoiceButton(r,'Método de pago','methods')],...fields.map(k=>[invoiceButton(r,catalog.campos[k].nombre,'f'+EDIT_FIELDS.indexOf(k))])];
+      if(r.mime!=='application/pdf'&&r.state!=='pendiente_liquidar'&&(r.warnings.length||['empresa','numero','importe'].some(k=>!r.data[k])))rows.push([invoiceButton(r,'Volver a leer la foto','retry')]);
+      rows.push([invoiceButton(r,'Cancelar','cancel')]);
+      return message('¿Qué dato quieres corregir?',rows);
+    }
+    if(a==='methods'){
+      requireFunction('cambiar_cobro');this.store.cancelEdit(sender);
+      return message(`Método actual: ${methodLabel(r.payment)}. Elige el método de pago.`,[
+        [invoiceButton(r,'Efectivo','efectivo'),invoiceButton(r,'Tarjeta','tarjeta')],
+        [invoiceButton(r,'Transferencia','transferencia'),invoiceButton(r,'Pagaré','pagare')],
+        [invoiceButton(r,'Cancelar','cancel')]]);
     }
     if(/^f\d+$/.test(a)){requireFunction('corregir_factura');const field=EDIT_FIELDS[Number(a.slice(1))];if(!field)throw new UserError('Campo no válido.');return this.editPrompt(sender,r,field);}
     if(['discard','delete','deleteyes'].includes(a)){

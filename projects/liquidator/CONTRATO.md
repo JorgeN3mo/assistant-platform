@@ -1,4 +1,4 @@
-# Contrato de Liquidator (v0.3.1)
+# Contrato de Liquidator (v0.3.2)
 
 ## Acceso y ejecución
 
@@ -85,6 +85,14 @@ Las tres empresas son distintas: DIBOS (D), REDISSA (R), REDISSA & DIBOS (RD).
 El impreso de la factura no determina el cobro. El usuario lo declara al aceptar;
 recibir un pagaré no significa que se haya hecho efectivo. No se gestionan cobros
 parciales ni una fecha general de cobro. Fechas admitidas: AAAA-MM-DD y DD/MM/AAAA.
+
+La ficha editable muestra solo Aceptar, Corregir y Eliminar. El método inicial es
+Efectivo; para cambiarlo se pulsa Corregir → Método de pago → método elegido.
+Transferencia solicita fecha; Pagaré solicita banco y después vencimiento cuando
+falten. Corregir, el selector de método y la entrada de valores tienen Cancelar,
+que sale a la ficha sin introducir un nuevo valor ni deshacer cambios ya guardados.
+Volver a leer la foto se ofrece dentro de Corregir cuando hay dudas u omisiones.
+No hay botón Ver lista en la ficha: las listas se consultan con /d, /r y /rd.
 
 Estados: `guardada` → `extrayendo` → `revision` → `pendiente_liquidar`.
 Aceptar exige datos completos y versión vigente; la identidad empresa+número
