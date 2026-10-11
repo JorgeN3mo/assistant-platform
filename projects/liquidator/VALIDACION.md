@@ -1,5 +1,28 @@
 # Validación — 11 de octubre de 2026
 
+## Menú de factura v0.3.2
+
+Código desplegado: `6b5d76b`. Pasan 45 pruebas Node y 11 de usuarios Python.
+Ficha editable con solo Aceptar, Corregir y Eliminar. Selección de método dentro
+de Corregir → Método de pago; Cancelar en ambos menús y en la entrada de valores.
+Volver a leer la foto pasa a Corregir cuando hay dudas; Ver lista se elimina.
+
+Prueba con el plugin desplegado y cargador real de OpenClaw en MiniGUN, en datos
+temporales privados, sin modificar facturas de producción ni enviar a Telegram:
+
+- Una foto real se extrajo con Luna: DIBOS, 141,59 €, efectivo inicial y tres botones.
+- Navegación con los callbacks reales de Corregir, Método de pago y Cancelar.
+- Transferencia pidió fecha; cancelar salió a la ficha y Aceptar rechazó el dato
+  pendiente. Tras introducir la fecha se pudo aceptar.
+- Pagaré pidió banco y después vencimiento; cancelar conservó el banco y no
+  permitió aceptar sin vencimiento. Retomar pidió solo el dato que faltaba.
+- /d conservó el total y la lista. Integridad SQLite correcta.
+- La ayuda de Luna indicó Corregir → Método de pago y la fecha obligatoria.
+- Servicio activo tras el despliegue; almacenamiento de prueba eliminado.
+
+Pendiente únicamente comprobar la presentación y pulsaciones desde el iPhone;
+la integración valida los payloads y callbacks, no la entrega visual de Telegram.
+
 ## Registro pasivo de conversaciones v0.3.1
 
 Código desplegado: `5cfb171`. Pasan 43 pruebas Node y 11 de usuarios Python.
