@@ -1,5 +1,32 @@
 # Validación — 11 de octubre de 2026
 
+## Parte PDF y perfiles de informes v0.4
+
+Código desplegado: `32506fb`. Pasan 51 pruebas Node y 12 Python. Incluyen extracción
+separada de base imponible, datos ausentes/ambiguos, comisión exacta por fila,
+nombre requerido, perfiles privados, copia fija del cierre, caché PDF, invalidación,
+versiones, fallo de generación y reapertura concurrente. Tres colores y 80 filas
+en cinco páginas generados y revisados visualmente; fecha local de España comprobada.
+
+Integración real en MiniGUN (OpenClaw + Luna + ReportLab 4.3.1) con almacenamiento
+temporal privado, sin enviar mensajes a Telegram ni modificar facturas reales:
+
+- Las fotos aportadas dieron base 117,02 € para DIBOS y 44,50 € para RD; comisiones
+  3,51 € y 1,34 €. Aceptación, cierre y botón Imprimir con documento PDF correctos.
+- Cierre bloqueado sin nombre completo; tras publicar el nombre del usuario de
+  prueba se pudo cerrar. El perfil real no se rellenó con nombres supuestos.
+- PDF privado 600, reimpresión con idénticos bytes. Cambiar el nombre de informes
+  no cambió el PDF del cierre anterior.
+- Reabrir eliminó el PDF anterior; corregir la base, aceptar y cerrar creó v2
+  con nuevo nombre y comisión. Las copias históricas de cierre conservaron sus datos.
+- Remitente no autorizado rechazado. Integridad SQLite correcta y servicio activo.
+- Proyección mínima de nombres en report-users.json, root:openclaw 640 y legible
+  por el servicio. Perfiles administrativos siguen fuera de su acceso.
+
+Pendiente completar el nombre completo de cada usuario y comprobar entrega real
+del PDF e impresión desde el iPhone. Estas pruebas interceptaron el dispatcher;
+no afirman que Telegram o una impresora hayan recibido el documento.
+
 ## Menú de factura v0.3.2
 
 Código desplegado: `6b5d76b`. Pasan 45 pruebas Node y 11 de usuarios Python.

@@ -61,11 +61,16 @@ El servidor necesita `python3-reportlab`; el script de despliegue lo comprueba
 antes de detener el servicio. En MiniGUN se ha instalado ReportLab 4.3.1. El renderer
 recibe JSON por stdin y devuelve PDF por stdout, sin intérprete de shell, red ni IA.
 
-## Validación local
+## Validación
 
-50 pruebas Node y 12 Python pasan. Incluyen permisos, nombres, datos fijos,
+51 pruebas Node y 12 Python pasan. Incluyen permisos, nombres, datos fijos,
 redondeo, cero explícito, falta de datos, aislamiento, reapertura durante una
 generación, caché, versiones, fallos del renderer y el callback Imprimir.
 Renderizados y revisados visualmente los tres colores y un documento de 80 filas
 en cinco páginas. Se comprobó fecha de España para un cierre cerca de medianoche.
-La validación del plugin desplegado y la entrega en iPhone siguen pendientes.
+Desplegado y validado con el plugin real en MiniGUN: lectura de las dos fotos,
+bases 117,02 € y 44,50 €, comisiones 3,51 € y 1,34 €, cierre, PDF privado,
+reimpresión idéntica, nombre fijo por versión, reapertura y nueva versión.
+Sin envíos a Telegram ni cambios de facturas reales. Queda probar la recepción
+y la impresión del PDF desde el iPhone. Antes de cerrar, cada usuario necesita
+su nombre completo en el perfil; no se han rellenado nombres supuestos.
