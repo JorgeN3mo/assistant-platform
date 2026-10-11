@@ -1,4 +1,4 @@
-# Contrato de Liquidator (v0.3.2)
+# Contrato de Liquidator (v0.4)
 
 ## Acceso y ejecución
 
@@ -71,7 +71,9 @@ Luna es el único modelo, sin herramientas ni alternativas; 30 lecturas/día UTC
 usuario, dos simultáneas y 60 segundos por lectura. No se reintenta al reiniciar.
 
 Campos obligatorios: empresa, número completo, fecha de factura, código cliente,
-cliente e importe total positivo EUR. Establecimiento es opcional. Referencia
+cliente, importe total positivo EUR y base imponible (cero permitido de forma explícita).
+La base se extrae de la foto; si falta, se introduce mediante Corregir → Base imponible.
+Comisión del 3 % de esa base, redondeada por factura a céntimos. Establecimiento es opcional. Referencia
 completa almacenada; últimos cuatro dígitos mostrados, conservando ceros iniciales.
 Las tres empresas son distintas: DIBOS (D), REDISSA (R), REDISSA & DIBOS (RD).
 
@@ -122,8 +124,17 @@ El CSV se descarga tras cerrar; incluye código cliente, factura abreviada, impo
 método, banco y vencimiento/fecha de transferencia, referencia completa y cliente,
 además del total. Se genera en el servidor desde la versión cerrada. Reabrir elimina
 el CSV anterior del servidor; las copias descargadas o enviadas siguen existiendo.
-El diseño definitivo del documento de presentación y registrar su entrega quedan
-para el siguiente bloque. No se presupone que el cierre ocurra un viernes.
+
+Imprimir y `/imprimir ID` generan el parte PDF A4 horizontal con las 13 columnas
+de la plantilla, marca y color de cada empresa, nombre completo del usuario,
+fecha del cierre en Europe/Madrid, sumas por método y comisión del 3 % sobre la
+base imponible. Dtos. vacío. Se repiten encabezados cuando hay varias páginas.
+El cierre exige nombre completo configurado y guarda una copia fija de sus filas,
+datos de encabezado y totales en `closure_reports`, en la misma transacción.
+Cambiar el perfil después no altera ese cierre. Cada versión conserva su copia
+histórica; reabrir elimina los PDF/CSV descargables y cerrar de nuevo crea otra
+versión. Ver [IMPRESION.md](IMPRESION.md) y [USUARIOS.md](USUARIOS.md).
+Registrar la presentación/entrega sigue pendiente. No se presupone un viernes fijo.
 
 ## Datos y borrado
 

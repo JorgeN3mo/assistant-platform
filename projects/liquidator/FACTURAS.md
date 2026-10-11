@@ -2,7 +2,8 @@
 
 1. En el chat privado de `@liki_liquidator_bot`, envía `/ayuda` y una foto. Puede
    tener ruido de fondo, pero debe verse una factura principal completa.
-2. Revisa empresa, número completo, fecha, código cliente, cliente e importe.
+2. Revisa empresa, número completo, fecha, código cliente, cliente, importe y
+   base imponible. La comisión es el 3 % de la base, redondeada a céntimos por fila.
    Efectivo es el valor inicial; el texto «REPOSICION» no decide cómo has cobrado.
    La ficha debe mostrar solo Aceptar, Corregir y Eliminar.
 3. Pulsa Corregir → Método de pago. Prueba Transferencia: se exige fecha.
@@ -19,6 +20,9 @@
    y del almacenamiento activo. No borra la foto del chat de Telegram.
 7. Usa `/cerrar D` (o R/RD), revisa el total y confirma. Las otras listas permanecen
    abiertas. Pulsa Descargar CSV y comprueba el archivo en el móvil.
+   Pulsa Imprimir y abre el PDF: comprueba nombre completo del perfil, color,
+   fecha del cierre, métodos, base y comisión. El nombre debe estar configurado
+   en el JSON de cada usuario, como explica [USUARIOS.md](USUARIOS.md).
 8. Envía otra foto distinta de esa empresa: entra a una lista nueva. Desde
    `/historial`, reabre la anterior, corrige una factura, vuelve a aceptarla y cierra.
    El nuevo CSV tiene otra versión. Las fotos nuevas no entran en la reabierta.

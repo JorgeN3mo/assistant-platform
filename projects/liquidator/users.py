@@ -4,6 +4,7 @@ import argparse
 from contextlib import contextmanager
 import fcntl
 import hashlib
+import grp
 import json
 import os
 from pathlib import Path
@@ -67,6 +68,9 @@ def validate(profile, expected_id):
         raise RegistryError('datos_informes debe contener nombre_completo, identificacion_fiscal y empresa.')
     if any(not isinstance(v, str) or len(v) > 500 for v in reports.values()):
         raise RegistryError('Los datos para informes deben ser textos de hasta 500 caracteres.')
+    full_name = reports['nombre_completo'].strip()
+    if len(full_name) > 200 or re.search(r'[\x00-\x1f\x7f]', full_name):
+        raise RegistryError('Nombre completo para informes no válido (máximo 200 caracteres).')
     return profile
 
 
@@ -141,6 +145,23 @@ def access_patch(profiles):
     return {'channels': {'telegram': dict(policy, accounts={'liki': dict(policy)})}}
 
 
+def publish_report_names(registry):
+    # Display names only: this file never grants bot access or exposes profiles.
+    profiles = registry.read()
+    names = {}
+    for profile in profiles:
+        name = profile['datos_informes']['nombre_completo'].strip()
+        if len(name) > 200 or re.search(r'[\x00-\x1f\x7f]', name):
+            raise RegistryError('Nombre completo para informes no válido (máximo 200 caracteres).')
+        if profile['estado'] == 'activo' and name:
+            names[profile['telegram_id']] = name
+    target = registry.data / 'report-users.json'
+    atomic_json(target, names)
+    if registry.data == DATA:
+        os.chown(target, 0, grp.getgrnam('openclaw').gr_gid)
+    os.chmod(target, 0o640)
+
+
 def access_matches(config, patch):
     telegram = config.get('channels', {}).get('telegram', {})
     target = patch['channels']['telegram']
@@ -201,6 +222,7 @@ def apply_registry(registry, preview=False):
     digest = hashlib.sha256(json.dumps(profiles, sort_keys=True).encode()).hexdigest()
     atomic_json(registry.data / 'users-access.json', {'active_telegram_ids': active,
                 'profiles_sha256': digest, 'applied_at_utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())})
+    publish_report_names(registry)
     print('Acceso aplicado y confirmado en OpenClaw. Luna y los demás controles no se modifican.')
 
 
@@ -215,6 +237,10 @@ def main():
     for name in ['activar', 'bloquear', 'pendiente']:
         sub.add_parser(name).add_argument('telegram_id')
     sub.add_parser('validar')
+    sub.add_parser('informes')
+    report_name = sub.add_parser('nombre-informe')
+    report_name.add_argument('telegram_id')
+    report_name.add_argument('--nombre', required=True)
     apply = sub.add_parser('aplicar')
     apply.add_argument('--simular', action='store_true')
     args = parser.parse_args()
@@ -234,6 +260,21 @@ def main():
                 print('\t'.join(p[k].replace('\t', ' ').replace('\n', ' ') for k in ['telegram_id', 'estado', 'rol', 'nombre']))
         elif args.command == 'validar':
             print(f'{len(registry.read())} perfiles válidos.')
+        elif args.command == 'informes':
+            publish_report_names(registry)
+            print('Nombres de informes sincronizados; acceso sin cambios.')
+        elif args.command == 'nombre-informe':
+            user_id = identifier(args.telegram_id)
+            registry.read()
+            name = args.nombre.strip()
+            if not name or len(name) > 200 or re.search(r'[\x00-\x1f\x7f]', name):
+                raise RegistryError('Nombre completo no válido.')
+            path = registry.users / user_id / 'profile.json'
+            profile = validate(load_json(path), user_id)
+            profile['datos_informes']['nombre_completo'] = name
+            atomic_json(path, profile)
+            publish_report_names(registry)
+            print('Nombre para informes actualizado; acceso sin cambios.')
         elif args.command == 'aplicar':
             apply_registry(registry, args.simular)
 

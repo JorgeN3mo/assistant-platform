@@ -25,9 +25,47 @@ y comprobar la sincronización con OpenClaw, como se explica más abajo.
 }
 ```
 
-El ID es numérico, positivo y debe coincidir con la carpeta. No usar el nombre `@usuario`, que puede cambiar. Los estados son `pendiente`, `activo` y `bloqueado`; solo `activo` da acceso. `admin` y `usuario` son roles de la futura aplicación: no conceden permisos de administración de OpenClaw. Los datos de informes pueden quedar vacíos.
+El ID es numérico, positivo y debe coincidir con la carpeta. No usar el nombre `@usuario`, que puede cambiar. Los estados son `pendiente`, `activo` y `bloqueado`; solo `activo` da acceso. `admin` y `usuario` son roles de la futura aplicación: no conceden permisos de administración de OpenClaw. El nombre completo es obligatorio para cerrar una liquidación y generar su parte; identificación fiscal y empresa pueden quedar vacías y no se imprimen.
 
 Los directorios creados por la herramienta tienen permisos `700` y los archivos `600`. No subir perfiles al repositorio ni enviarlos al bot.
+
+## Completar la información para imprimir
+
+Hay **un JSON por persona**, en su carpeta de ID de Telegram. Edita únicamente
+`datos_informes.nombre_completo` para el nombre que aparecerá en sus partes.
+`nombre` es el nombre corto administrativo. La empresa del parte la determina
+la liquidación (D, R o RD), no `datos_informes.empresa`.
+
+Por ejemplo, dentro del perfil de la persona:
+
+```json
+"datos_informes": {
+  "nombre_completo": "Nombre Apellido Apellido",
+  "identificacion_fiscal": "",
+  "empresa": ""
+}
+```
+
+Puedes editar el archivo desde el Mac. Sustituye el ID ficticio `123456789` por el
+ID de Telegram de la persona:
+
+```bash
+ssh -t miniGUN 'sudo nano /data/liquidator/users/123456789/profile.json'
+ssh miniGUN 'sudo /opt/ai-platform/scripts/usuarios.sh validar && sudo /opt/ai-platform/scripts/usuarios.sh informes'
+```
+
+Usa el ID correspondiente para cada usuario. `informes` sincroniza los nombres
+sin cambiar accesos ni reiniciar el bot. Como alternativa a editar JSON:
+
+```bash
+ssh miniGUN "sudo /opt/ai-platform/scripts/usuarios.sh nombre-informe 123456789 --nombre 'Nombre Apellido Apellido'"
+```
+
+El servicio solo recibe los nombres completos de perfiles activos en
+`/data/liquidator/report-users.json` (root:openclaw, 640); no lee ni escribe los
+perfiles privados. No edites esta copia generada. `aplicar` y el despliegue también
+la sincronizan. Un cambio de nombre se usa en los siguientes cierres; un parte
+ya cerrado conserva el nombre guardado en esa versión.
 
 ## Comandos desde el Mac
 

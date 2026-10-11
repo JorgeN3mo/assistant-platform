@@ -7,9 +7,11 @@ import {Controller, authorized, buttons} from './controller.mjs';
 import {Store, money, readAttachment, cleanExtraction} from './store.mjs';
 import plugin from './plugin.mjs';
 const image = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9WQAAAAASUVORK5CYII=', 'base64');
-const invoice = {empresa:'DIBOS', numero:'1/2026 100', fecha_factura:'2026-09-23', codigo_cliente:'101', cliente:'Cliente de prueba', establecimiento:'Local de prueba', importe:'141.59', principal_clara:true, dudas:[]};
+const invoice = {empresa:'DIBOS', numero:'1/2026 100', fecha_factura:'2026-09-23', codigo_cliente:'101', cliente:'Cliente de prueba', establecimiento:'Local de prueba', importe:'141.59', base_comision:'117.02', principal_clara:true, dudas:[]};
 function fixture(t, override = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'liq-unit-'));
+  fs.mkdirSync(path.join(root,'data'));
+  fs.writeFileSync(path.join(root,'data','report-users.json'),JSON.stringify({'101':'Comercial de Prueba García'}));
   const mediaRoot=path.join(root,'media'); fs.mkdirSync(mediaRoot);
   const source=path.join(mediaRoot,'image.png'); fs.writeFileSync(source,image);
   const policy={enabled:true,dmPolicy:'allowlist',allowFrom:['101','102']};
@@ -62,7 +64,7 @@ test('failed extraction saves original and supports fixed-field correction witho
  const f=fixture(t,{extractor:async()=>{throw new Error('provider unavailable')}});await f.incoming();let r=f.c.store.list('101')[0];
  assert.equal(r.state,'revision');assert.ok(fs.existsSync(r.original));assert.match(r.warnings[0],/No se pudo leer/);
  assert.throws(()=>f.c.store.change('101',r.id,r.revision,'confirm'),/Falta/);
- for(const key of ['empresa','numero','fecha_factura','codigo_cliente','cliente','importe']) r=f.c.store.change('101',r.id,r.revision,'edit',{field:key,value:invoice[key]});
+ for(const key of ['empresa','numero','fecha_factura','codigo_cliente','cliente','importe','base_comision']) r=f.c.store.change('101',r.id,r.revision,'edit',{field:key,value:invoice[key]});
  assert.equal(f.c.store.change('101',r.id,r.revision,'confirm').state,'pendiente_liquidar');
 });
 test('money, calendar validation, ambiguity and model-added fields are constrained',()=>{

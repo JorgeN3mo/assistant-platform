@@ -18,6 +18,7 @@ secrets/
 
 # User data and generated output belong under /data, never in Git.
 /data/
+/output/pdf/
 incoming/
 processed/
 backups/

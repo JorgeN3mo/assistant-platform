@@ -2,6 +2,7 @@ import {Store, UserError, readAttachment, userId, EDIT_FIELDS, money} from './st
 import {extract} from './extract.mjs';
 import {assist} from './help.mjs';
 import {ConversationArchive} from './conversations.mjs';
+import {renderReport} from './reports.mjs';
 import {catalog, enabled, command, company, companyCode, shortNumber, methodLabel, menu} from './catalog.mjs';
 
 export function authorized(cfg, account, sender, isGroup, expectedAccount='liki') {
@@ -21,7 +22,9 @@ export function ficha(r){
   return [`${code??'?'} · Factura ${shortNumber(d.numero)||'por leer'} · ${stateLabel(r)}`,
     `Empresa: ${d.empresa||'POR REVISAR'}`,`Número completo: ${d.numero||'POR REVISAR'}`,`Fecha: ${d.fecha_factura||'POR REVISAR'}`,
     `Código cliente: ${d.codigo_cliente||'POR REVISAR'}`,`Cliente: ${d.cliente||'POR REVISAR'}`,`Establecimiento: ${d.establecimiento||'—'}`,
-    `Importe: ${d.importe?euros(money(d.importe)):'POR REVISAR'}`,`Método: ${methodLabel(r.payment)}`,
+    `Importe: ${d.importe?euros(money(d.importe)):'POR REVISAR'}`,
+    `Base imponible: ${d.base_comision?euros(money(d.base_comision,true)):'POR REVISAR'}`,
+    `Comisión (3 %): ${d.base_comision?euros(Math.floor((money(d.base_comision,true)*3+50)/100)):'POR REVISAR'}`,`Método: ${methodLabel(r.payment)}`,
     ...(r.payment==='pagare'?[`Banco: ${d.banco||'OBLIGATORIO'}`,`Vencimiento: ${d.vencimiento||'OBLIGATORIO'}`]:[]),
     ...(r.payment==='transferencia'?[`Fecha transferencia: ${d.fecha_transferencia||'OBLIGATORIA'}`]:[]),
     ...(r.batch?[`Liquidación ${r.batch.id} · ${r.batch.state}`]:[]),...r.warnings.map(w=>'Revisar: '+w),
@@ -36,10 +39,11 @@ export function buttons(r){
 const sheet=r=>message(ficha(r),buttons(r));
 function requireFunction(id){if(!enabled(id))throw new UserError('Función desactivada.');}
 export class Controller {
-  constructor({config,runtime,options={},extractor=extract,helper=assist,logger={warn(){}}}){
+  constructor({config,runtime,options={},extractor=extract,helper=assist,renderer=renderReport,logger={warn(){}}}){
     this.config=config;this.runtime=runtime;this.extractor=extractor;this.helper=helper;this.logger=logger;
     this.options={dataDir:'/data/liquidator',mediaRoot:'/data/openclaw/state/media',accountId:'liki',maxBytes:10485760,dailyLimit:30,extractionEnabled:true,...options};
     this.archive=new ConversationArchive(this.options.dataDir,{logger});
+    this.renderer=renderer;this.activePrints=0;
     this.activeReads=0;this.activeHelp=0;this.helpUsers=new Set();this.helpEpoch=new Map();this.storeValue=null;
   }
   get store(){if(!this.storeValue){this.storeValue=new Store(this.options.dataDir);this.storeValue.recoverInterrupted();}return this.storeValue;}
@@ -84,6 +88,12 @@ export class Controller {
     return message(`${companyCode(r.data.empresa)||'?'} · ${shortNumber(r.data.numero)||'Factura'}\nIntroduce ${catalog.campos[field].nombre.toLowerCase()}.${hint}\n/cancelar para salir.`,[[invoiceButton(r,'Cancelar','cancel')]]);
   }
   nextPayment(sender,r){const field=catalog.metodos[r.payment].obligatorios.find(k=>!r.data[k]);return field?this.editPrompt(sender,r,field):sheet(r);}
+  async print(sender,id){
+    if(this.activePrints>=2)throw new UserError('Hay partes generándose. Vuelve a pulsar Imprimir en unos segundos.');
+    this.activePrints++;
+    try{return {text:'Parte de cobros · PDF listo para imprimir.',mediaUrl:await this.store.exportPDF(sender,id,this.options.mediaRoot,this.renderer)};}
+    finally{this.activePrints--;}
+  }
   batchSheet(sender,id,page=0){
     const b=this.store.batch(sender,id),all=this.store.batchRows(sender,id),start=page*6,rows=all.slice(start,start+6),sums=Object.fromEntries(Object.keys(catalog.metodos).map(k=>[k,0]));
     let total=0,missing=0;for(const r of all){if(r.data.importe){const n=money(r.data.importe);total+=n;sums[r.payment]+=n;}else missing++;}
@@ -95,6 +105,7 @@ export class Controller {
       `${all.length} facturas · ${this.store.closeProblems(sender,id).length} pendientes de aceptar/completar`];
     const btns=rows.map(r=>[invoiceButton(r,`${shortNumber(r.data.numero)||'Sin número'} · ${r.data.codigo_cliente||'Sin código'}`,'view')]);
     const nav=[];if(page>0)nav.push(batchButton(b,'Anterior',`page${page-1}`));if(start+6<all.length)nav.push(batchButton(b,'Siguiente',`page${page+1}`));if(nav.length)btns.push(nav);
+    if(b.state==='cerrada')btns.push([batchButton(b,'Imprimir','print')]);
     btns.push(b.state==='cerrada'?[batchButton(b,'Reabrir','reopen'),batchButton(b,'Descargar CSV','export')]:[batchButton(b,'Revisar y cerrar','close')]);
     return message(lines.join('\n'),btns);
   }
@@ -103,10 +114,11 @@ export class Controller {
     if(b.state==='cerrada')throw new UserError('La liquidación ya está cerrada.');
     if(!rows.length)throw new UserError('La lista está vacía.');
     const problems=this.store.closeProblems(sender,id);if(problems.length)return message(`No se puede cerrar: ${problems.length} facturas sin aceptar o incompletas.`,problems.slice(0,8).map(r=>[invoiceButton(r,`Revisar ${shortNumber(r.data.numero)||'factura'}`,'view')]));
+    this.store.reportName(sender);
     const total=rows.reduce((n,r)=>n+money(r.data.importe),0);
-    return message(`Cerrar ${companyCode(b.company)} · Liquidación ${b.id}\n${rows.length} facturas · ${euros(total)}\nLas nuevas fotos irán a una lista nueva de esta empresa.`,[[batchButton(b,'Confirmar cierre','closeyes'),batchButton(b,'Volver','view')]]);
+    return message(`Cerrar ${companyCode(b.company)} · Liquidación ${b.id}\n${rows.length} facturas · ${euros(total)}\nComercial: ${this.store.reportName(sender)}\nEl parte guardará estos datos y calculará el 3 % sobre las bases revisadas.\nLas nuevas fotos irán a una lista nueva de esta empresa.`,[[batchButton(b,'Confirmar cierre','closeyes'),batchButton(b,'Volver','view')]]);
   }
-  reopenPreview(sender,id){const b=this.store.batch(sender,id);if(b.state!=='cerrada')throw new UserError('La liquidación ya está abierta.');return message(`¿Reabrir ${companyCode(b.company)} · Liquidación ${b.id}?\nLas nuevas fotos seguirán en la lista nueva. El CSV anterior quedará invalidado en el servidor.`,[[batchButton(b,'Confirmar reapertura','reopenyes'),batchButton(b,'Volver','view')]]);}
+  reopenPreview(sender,id){const b=this.store.batch(sender,id);if(b.state!=='cerrada')throw new UserError('La liquidación ya está abierta.');return message(`¿Reabrir ${companyCode(b.company)} · Liquidación ${b.id}?\nLas nuevas fotos seguirán en la lista nueva. El PDF y el CSV anteriores quedarán invalidados en el servidor.`,[[batchButton(b,'Confirmar reapertura','reopenyes'),batchButton(b,'Volver','view')]]);}
   async incoming({account,sender,isGroup,messageId,text='',media=[]}){
     if(!this.permitted(account,sender,isGroup))return [];
     const replies=await this.dispatch({account,sender,messageId,text,media});
@@ -146,9 +158,9 @@ export class Controller {
         if(name==='historial'){
           const page=/^\d+$/.test(args)?Number(args):0,rows=this.store.history(sender,page*10);return [message('Liquidaciones · Página '+(page+1),[...rows.map(b=>[batchButton(b,`${companyCode(b.company)} · ${b.id} · ${b.state}`,'view')]),...(rows.length===10?[[{text:'Siguiente',callback_data:`liq:h:${page+1}`}]]:[])])];
         }
-        if(['liquidacion','reabrir','exportar'].includes(name)){
+        if(['liquidacion','reabrir','exportar','imprimir'].includes(name)){
           if(!/^\d{1,12}$/.test(args))return [message(`Usa /${name} 12, con el número de liquidación de /historial.`)];
-          const id=Number(args);return [name==='liquidacion'?this.batchSheet(sender,id):name==='reabrir'?this.reopenPreview(sender,id):messageWithFile(this.store.exportCSV(sender,id,this.options.mediaRoot))];
+          const id=Number(args);return [name==='liquidacion'?this.batchSheet(sender,id):name==='reabrir'?this.reopenPreview(sender,id):name==='imprimir'?await this.print(sender,id):messageWithFile(this.store.exportCSV(sender,id,this.options.mediaRoot))];
         }
       }
       return [await this.help(sender,t,messageId)];
@@ -165,9 +177,9 @@ export class Controller {
     if(!this.permitted(account,sender,isGroup))return null;
     const d=String(data??'').replace(/^liq:/,'');
     if(/^[ph]:\d{1,6}$/.test(d)){const [kind,page]=d.split(':');return (await this.dispatch({account,sender,messageId:'page:'+d,text:`/${kind==='p'?'pendientes':'historial'} ${page}`,media:[]}))[0];}
-    const batch=/^b:(\d{1,12}):(\d+):(view|page\d{1,6}|close|closeyes|reopen|reopenyes|export)$/.exec(d);
+    const batch=/^b:(\d{1,12}):(\d+):(view|page\d{1,6}|close|closeyes|reopen|reopenyes|export|print)$/.exec(d);
     if(batch){
-      const [,id,v,a]=batch,b=this.store.batch(sender,Number(id));requireFunction(a.startsWith('close')?'cerrar_liquidacion':a.startsWith('reopen')?'reabrir_liquidacion':a==='export'?'exportar_liquidacion':'historial');
+      const [,id,v,a]=batch,b=this.store.batch(sender,Number(id));requireFunction(a.startsWith('close')?'cerrar_liquidacion':a.startsWith('reopen')?'reabrir_liquidacion':a==='export'?'exportar_liquidacion':a==='print'?'imprimir_liquidacion':'historial');
       if(a==='view'||a.startsWith('page'))return this.batchSheet(sender,b.id,a==='view'?0:Number(a.slice(4)));
       if(b.revision!==Number(v))throw new UserError('La liquidación ha cambiado. Abre /liquidacion '+id);
       if(a==='close')return this.closePreview(sender,b.id);
@@ -176,7 +188,7 @@ export class Controller {
       if(a==='reopenyes'){this.store.reopenBatch(sender,b.id,b.revision);return this.batchSheet(sender,b.id);}
       // Telegram callback replies support text/buttons only. Route this trusted
       // command through normal ingress, whose dispatcher can deliver documents.
-      return {submitText:`/exportar ${b.id}`};
+      return {submitText:`/${a==='print'?'imprimir':'exportar'} ${b.id}`};
     }
     const m=/^(?:i:)?([a-f0-9]{24}):(\d+):(view|confirm|edit|methods|f\d{1,2}|efectivo|tarjeta|transferencia|pagare|retry|discard|delete|deleteyes|cancel)$/.exec(d);
     if(!m)throw new UserError('Botón no válido. Abre de nuevo la lista.');
@@ -185,10 +197,10 @@ export class Controller {
     if(a==='cancel'){this.store.cancelEdit(sender);return sheet(r);}
     this.store.editable(r,revision);
     if(a==='edit'){
-      requireFunction('corregir_factura');const fields=EDIT_FIELDS.filter(k=>catalog.campos[k].extraido||catalog.metodos[r.payment].obligatorios.includes(k));
+      requireFunction('corregir_factura');const fields=EDIT_FIELDS.filter(k=>catalog.campos[k].extraido||k==='base_comision'||catalog.metodos[r.payment].obligatorios.includes(k));
       this.store.cancelEdit(sender);
       const rows=[[invoiceButton(r,'Método de pago','methods')],...fields.map(k=>[invoiceButton(r,catalog.campos[k].nombre,'f'+EDIT_FIELDS.indexOf(k))])];
-      if(r.mime!=='application/pdf'&&r.state!=='pendiente_liquidar'&&(r.warnings.length||['empresa','numero','importe'].some(k=>!r.data[k])))rows.push([invoiceButton(r,'Volver a leer la foto','retry')]);
+      if(r.mime!=='application/pdf'&&r.state!=='pendiente_liquidar'&&(r.warnings.length||['empresa','numero','importe','base_comision'].some(k=>!r.data[k])))rows.push([invoiceButton(r,'Volver a leer la foto','retry')]);
       rows.push([invoiceButton(r,'Cancelar','cancel')]);
       return message('¿Qué dato quieres corregir?',rows);
     }

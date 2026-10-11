@@ -1,7 +1,7 @@
 # Liquidator
 
 Bot de Telegram para registrar facturas ya cobradas y preparar su posterior liquidación.
-Recepción, lectura, revisión, liquidaciones por empresa, CSV y ayuda limitada implementados.
+Recepción, lectura, revisión, liquidaciones por empresa, CSV, parte PDF y ayuda limitada implementados.
 El cierre de la prueba requiere enviar una foto desde el iPhone al bot y verificarla.
 
 ## Dónde está cada cosa
@@ -20,9 +20,12 @@ projects/liquidator/
 │   ├── controller.mjs     # Acciones cerradas, acceso y fichas de revisión
 │   ├── extract.mjs        # Instrucciones de lectura con Luna, sin herramientas
 │   ├── store.mjs          # Originales, SQLite, validación y duplicados
+│   ├── reports.mjs        # Generación limitada del PDF desde el cierre guardado
+│   ├── render-report.py   # Plantilla A4 horizontal con ReportLab
 │   └── flow.test.mjs      # Pruebas con datos ficticios
 ├── CONTRATO.md            # Reglas del negocio y límites de esta versión
 ├── FACTURAS.md            # Flujo y prueba desde el iPhone
+├── IMPRESION.md           # Parte PDF, bases, comisiones y versiones
 ├── PLAN.md                # Bloques, estado y próximos pasos
 ├── USUARIOS.md            # Cómo administrar el acceso
 └── TELEGRAM.md            # Conexión y restricciones
@@ -32,6 +35,7 @@ projects/liquidator/
 /data/liquidator/                              # MiniGUN, privado, fuera de Git
 ├── users/<telegram_id>/profile.json           # Fuente administrativa del acceso
 ├── users-access.json                         # Recibo de permisos aplicados
+├── report-users.json                         # Nombres completos para partes, copia generada
 ├── runtime/liquidator.sqlite3                # Fichas, estado, intentos e historial
 ├── runtime/conversations/AAAA-MM-DD.jsonl     # Conversaciones de ayuda, 90 días
 └── invoices/<telegram_id>/<referencia>/
@@ -39,11 +43,12 @@ projects/liquidator/
     └── metadata.json                         # Recibo inmutable del guardado
 
 /data/openclaw/state/openclaw.json             # Lista efectiva de Telegram
-/data/openclaw/state/media/liquidator-exports/ # CSV privados por usuario y versión
+/data/openclaw/state/media/liquidator-exports/ # PDF/CSV privados por usuario y versión
 ```
 
 Después de cambiar perfiles: `scripts/usuarios.sh aplicar`. No editar varias listas
-manualmente. Los comandos, botones y remitentes se validan antes de invocar Luna.
+manualmente. Para actualizar solo nombres completos: `scripts/usuarios.sh informes`.
+Los comandos, botones y remitentes se validan antes de invocar Luna.
 Texto ajeno al menú consulta la ayuda del manual con redacción personalizada y contexto
 breve. Límites por usuario y cupo global de 200 llamadas/día; desconocidos y grupos
 no se procesan. `/ayuda` olvida el contexto. Ver el contrato para controles y alcance.
@@ -61,6 +66,9 @@ python3 -m unittest discover -s projects/liquidator -p 'test_*.py'
 
 Node >=22.16; MiniGUN utiliza Node 24. Sin dependencias npm adicionales: SQLite
 forma parte de Node y el plugin utiliza el SDK de la instalación de OpenClaw.
+Los PDF requieren Python 3 y ReportLab (`sudo apt-get install python3-reportlab`
+en MiniGUN). En pruebas locales, `LIQUIDATOR_TEST_PYTHON` permite elegir un Python
+con ReportLab; por defecto se usa `/usr/bin/python3`.
 
 Tras revisar y subir el commit, ejecutar en MiniGUN:
 

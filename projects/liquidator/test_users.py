@@ -84,6 +84,23 @@ class UserAccessTests(unittest.TestCase):
         self.assertEqual((self.data / 'users/101').stat().st_mode & 0o777, 0o700)
         self.assertEqual((self.data / 'users/101/profile.json').stat().st_mode & 0o777, 0o600)
 
+    def test_report_projection_has_only_active_full_names_and_never_grants_access(self):
+        self.add('101', 'activo')
+        self.add('102', 'bloqueado')
+        self.add('103', 'activo')
+        for user_id in ['101', '102']:
+            path = self.data / f'users/{user_id}/profile.json'
+            profile = json.loads(path.read_text())
+            profile['datos_informes'].update(nombre_completo='Comercial de Prueba García', identificacion_fiscal='PRIVATE_TAX_ID')
+            users.atomic_json(path, profile)
+        with patch('users.call_admin') as admin:
+            users.publish_report_names(self.registry)
+            admin.assert_not_called()
+        target = self.data / 'report-users.json'
+        self.assertEqual(json.loads(target.read_text()), {'101': 'Comercial de Prueba García'})
+        self.assertNotIn('PRIVATE_TAX_ID', target.read_text())
+        self.assertEqual(target.stat().st_mode & 0o777, 0o640)
+
     def test_preview_and_apply_validate_then_verify_runtime(self):
         self.add('101', 'activo')
         desired = users.access_patch(self.registry.read())

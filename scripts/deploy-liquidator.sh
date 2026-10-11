@@ -2,6 +2,10 @@
 # Run on MiniGUN after reviewing and pulling the Git commit.
 set -euo pipefail
 [[ $EUID == 0 ]] || { echo 'Ejecutar con sudo en MiniGUN.' >&2; exit 1; }
+# Check the deterministic PDF renderer before stopping the running service.
+python3 -c 'import reportlab; from zoneinfo import ZoneInfo; ZoneInfo("Europe/Madrid")' || {
+  echo 'Falta la dependencia PDF: instalar python3-reportlab antes de desplegar.' >&2; exit 1;
+}
 repo=/opt/ai-platform
 config=/data/openclaw/state/openclaw.json
 dropin=/etc/systemd/system/openclaw-gateway.service.d/liquidator.conf
@@ -54,6 +58,7 @@ PY
 chgrp openclaw /data/liquidator
 chmod 710 /data/liquidator
 install -d -o openclaw -g openclaw -m 700 /data/liquidator/runtime /data/liquidator/invoices
+"$repo/scripts/usuarios.sh" informes
 install -d -m 755 "$(dirname "$dropin")"
 install -m 644 "$repo/openclaw/liquidator.conf" "$dropin"
 # A changed versioned path must replace the previous explicit path, not add a

@@ -28,11 +28,11 @@ function writeNew(p, bytes) {
   fs.renameSync(temporary, p);
   syncDir(path.dirname(p));
 }
-export function money(value) {
+export function money(value, allowZero=false) {
   if (typeof value !== 'string' || !/^\d{1,8}([.,]\d{1,2})?$/.test(value.trim())) throw new UserError('Importe no válido. Ejemplo: 125,50');
   const [whole, decimal = ''] = value.trim().replace(',', '.').split('.');
   const cents = Number(whole) * 100 + Number(decimal.padEnd(2, '0'));
-  if (cents <= 0) throw new UserError('El importe debe ser positivo; abonos y cobros parciales quedan fuera de esta prueba.');
+  if (cents < 0 || (!allowZero && cents === 0)) throw new UserError('El importe debe ser positivo; abonos y cobros parciales quedan fuera de esta prueba.');
   return cents;
 }
 export function validateField(key, value) {
@@ -44,6 +44,7 @@ export function validateField(key, value) {
   if (key === 'empresa' && !COMPANIES.includes(v)) throw new UserError('Empresa: DIBOS, REDISSA o REDISSA & DIBOS.');
   if (key === 'numero' && /^\d+\/\d{4}$/.test(v)) throw new UserError('Falta el número correlativo después de la serie/año.');
   if (key === 'importe') return (money(v) / 100).toFixed(2);
+  if (key === 'base_comision') return (money(v,true) / 100).toFixed(2);
   if (catalog.campos[key].tipo === 'fecha' && v && (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(v)) || new Date(v).toISOString().slice(0, 10) !== v)) throw new UserError('Fecha no válida. Usa AAAA-MM-DD.');
   return v;
 }
@@ -203,6 +204,9 @@ export class Store {
         CREATE TABLE IF NOT EXISTS help_replies (owner TEXT NOT NULL, delivery TEXT NOT NULL, response TEXT, PRIMARY KEY(owner,delivery));
         CREATE TABLE IF NOT EXISTS sources (invoice_id TEXT NOT NULL, path TEXT NOT NULL, UNIQUE(invoice_id,path));
         CREATE TABLE IF NOT EXISTS exports (batch_id INTEGER NOT NULL, path TEXT NOT NULL PRIMARY KEY);
+        CREATE TABLE IF NOT EXISTS closure_reports (
+          batch_id INTEGER NOT NULL REFERENCES batches(id), version INTEGER NOT NULL,
+          snapshot TEXT NOT NULL, PRIMARY KEY(batch_id,version));
         CREATE TABLE IF NOT EXISTS help_context (
           id INTEGER PRIMARY KEY, owner TEXT NOT NULL, question TEXT NOT NULL, response TEXT NOT NULL, at TEXT NOT NULL);
         CREATE INDEX IF NOT EXISTS help_context_owner ON help_context(owner,at);
@@ -336,9 +340,59 @@ export class Store {
     if(b.state==='cerrada')throw new UserError('La liquidación ya está cerrada.');
     const rows=this.batchRows(owner,id);if(!rows.length)throw new UserError('No se puede cerrar una lista vacía.');
     if(this.closeProblems(owner,id).length)throw new UserError('Hay facturas sin aceptar o con datos de cobro incompletos. Revísalas antes de cerrar.');
-    this.db.prepare("UPDATE batches SET state='cerrada',version=version+1,revision=revision+1,closed_at=? WHERE id=?").run(now(),id);
+    const closedAt=now(),snapshot=this.buildReport(owner,b,rows,closedAt);
+    this.db.prepare('INSERT INTO closure_reports VALUES (?,?,?)').run(id,b.version+1,JSON.stringify(snapshot));
+    this.db.prepare("UPDATE batches SET state='cerrada',version=version+1,revision=revision+1,closed_at=? WHERE id=?").run(closedAt,id);
     return this.batch(owner,id);
   });}
+  reportName(owner){
+    userId(owner);
+    try{
+      const filename=path.join(this.root,'report-users.json');
+      const fd=fs.openSync(filename,fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW);
+      let names;try{const st=fs.fstatSync(fd);if(!st.isFile()||st.size>1024*1024)throw new Error();names=JSON.parse(fs.readFileSync(fd,'utf8'));}finally{fs.closeSync(fd);}
+      const name=names[owner];if(typeof name!=='string'||!name.trim()||name.trim().length>200||/[\x00-\x1f\x7f]/.test(name))throw new Error();
+      return name.trim();
+    }catch{throw new UserError('Falta el nombre completo del comercial para el parte. El administrador debe completar el perfil y sincronizar los informes.');}
+  }
+  buildReport(owner,b,records,closedAt){
+    if(records.length>2000)throw new UserError('La liquidación supera el máximo de 2000 filas del parte.');
+    const code=companyCode(b.company),brand=catalog.impresion.empresas[code];
+    const rows=records.map(r=>{
+      const base=money(r.data.base_comision,true),amount=money(r.data.importe);
+      return {invoice_id:r.id,client_code:r.data.codigo_cliente,client:r.data.cliente,
+        number_full:r.data.numero,number_short:shortNumber(r.data.numero),invoice_date:r.data.fecha_factura,
+        amount_cents:amount,payment:r.payment,bank:r.payment==='pagare'?r.data.banco:'',
+        date:r.payment==='pagare'?r.data.vencimiento:r.payment==='transferencia'?r.data.fecha_transferencia:'',
+        base_cents:base,commission_cents:Math.floor((base*3+50)/100)};
+    });
+    const totals={amount_cents:0,base_cents:0,commission_cents:0,efectivo:0,pagare:0,transferencia:0,tarjeta:0};
+    for(const r of rows){for(const key of ['amount_cents','base_cents','commission_cents'])totals[key]+=r[key];totals[r.payment]+=r.amount_cents;}
+    return {schema:1,batch_id:b.id,version:b.version+1,owner,company_code:code,
+      company:b.company,company_label:brand.nombre,color:brand.color,
+      commercial_name:this.reportName(owner),closed_at:closedAt,timezone:'Europe/Madrid',commission_percent:3,rows,totals};
+  }
+  reportSnapshot(owner,id){
+    const b=this.batch(owner,id);if(b.state!=='cerrada')throw new UserError('Cierra la liquidación antes de imprimirla.');
+    const row=this.db.prepare('SELECT snapshot FROM closure_reports WHERE batch_id=? AND version=?').get(id,b.version);
+    if(!row)throw new UserError('Este cierre es anterior al parte PDF. Reabre la liquidación, revisa las bases y vuelve a cerrarla.');
+    return JSON.parse(row.snapshot);
+  }
+  async exportPDF(owner,id,mediaRoot,render){
+    const snapshot=this.reportSnapshot(owner,id),b=this.batch(owner,id);
+    const folder=path.join(mediaRoot,'liquidator-exports',userId(owner));directory(folder);
+    const output=path.join(folder,`${snapshot.company_code}-${b.id}-v${b.version}.pdf`);
+    if(fs.existsSync(output)){
+      if(fs.lstatSync(output).isSymbolicLink()||!fs.statSync(output).isFile())throw new Error('Unsafe report');
+    }else{
+      const bytes=await render(snapshot);
+      const current=this.batch(owner,id);
+      if(current.state!=='cerrada'||current.revision!==b.revision)throw new UserError('La liquidación ha cambiado durante la impresión. Ábrela de nuevo.');
+      if(!Buffer.isBuffer(bytes)||bytes.length>10*1024*1024||bytes.subarray(0,5).toString()!=='%PDF-')throw new Error('Invalid PDF');
+      writeNew(output,bytes);
+    }
+    this.db.prepare('INSERT OR IGNORE INTO exports VALUES (?,?)').run(id,output);return output;
+  }
   invalidateExports(id){for(const e of this.db.prepare('SELECT path FROM exports WHERE batch_id=?').all(id))fs.rmSync(e.path,{force:true});this.db.prepare('DELETE FROM exports WHERE batch_id=?').run(id);}
   reopenBatch(owner,id,revision){return this.transaction(()=>{
     const b=this.batch(owner,id);if(b.revision!==revision||b.state!=='cerrada')throw new UserError('La liquidación ha cambiado o ya está abierta.');

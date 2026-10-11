@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "estado": "implementado",
   "empresas": {
     "D": "DIBOS",
@@ -66,6 +66,12 @@
       "tipo": "fecha",
       "obligatorio": false,
       "extraido": false
+    },
+    "base_comision": {
+      "nombre": "Base imponible",
+      "tipo": "importe",
+      "obligatorio": true,
+      "extraido": true
     }
   },
   "metodos": {
@@ -216,7 +222,7 @@
       ],
       "habilitada": true,
       "descripcion": "Corregir una liquidación anterior.",
-      "ayuda": "Usa /reabrir 12 y confirma. Se puede editar su contenido; las fotos nuevas siguen en la lista nueva. Vuelve a cerrarla desde su ficha cuando termines. Se invalida el CSV anterior en el servidor.",
+      "ayuda": "Usa /reabrir 12 y confirma. Se puede editar su contenido; las fotos nuevas siguen en la lista nueva. Vuelve a cerrarla desde su ficha cuando termines. Se invalidan el PDF y el CSV anteriores en el servidor.",
       "usa_llm": false
     },
     {
@@ -230,6 +236,14 @@
       "usa_llm": false
     },
     {
+      "id": "imprimir_liquidacion",
+      "comandos": ["imprimir"],
+      "habilitada": true,
+      "descripcion": "Generar el parte de cobros PDF de una liquidación cerrada.",
+      "ayuda": "Tras confirmar el cierre pulsa Imprimir, también disponible desde /historial, o usa /imprimir 12. Recibirás un PDF A4 horizontal para abrir e imprimir desde Telegram. Incluye nombre completo del perfil de ese usuario, empresa, fecha del cierre en España, facturas, métodos y comisión del 3 % sobre la base imponible de la factura. La base se lee de la foto y se revisa en la ficha; puedes cambiarla con Corregir → Base imponible. Dtos. queda vacío; abonos y cobros sin factura quedan fuera. Si falta base, corrige la factura; si falta nombre completo, el administrador lo completa en el JSON del usuario y sincroniza informes. Cierres anteriores al PDF deben reabrirse, revisarse y cerrarse. Reabrir invalida las descargas anteriores del servidor; cerrar de nuevo crea otra versión.",
+      "usa_llm": false
+    },
+    {
       "id": "ayuda_llm",
       "comandos": [],
       "habilitada": true,
@@ -238,6 +252,14 @@
       "usa_llm": true
     }
   ],
+  "impresion": {
+    "comision_porcentaje": 3,
+    "empresas": {
+      "D": {"nombre": "D · Dibos", "color": "#4285F4"},
+      "R": {"nombre": "R · Redissa", "color": "#C00022"},
+      "RD": {"nombre": "RD · Redissa & Dibos", "color": "#2DA653"}
+    }
+  },
   "registro_conversaciones": {
     "habilitado": true,
     "retencion_dias": 90,
