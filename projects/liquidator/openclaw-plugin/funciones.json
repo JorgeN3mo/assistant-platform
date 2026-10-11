@@ -169,7 +169,7 @@
       "comandos": [],
       "habilitada": true,
       "descripcion": "Elegir efectivo, tarjeta, transferencia o pagaré.",
-      "ayuda": "Efectivo es el valor inicial. Transferencia exige fecha de transferencia. Pagaré recibido exige banco y vencimiento. Al elegirlos se piden los datos que faltan. Fechas AAAA-MM-DD o DD/MM/AAAA. Pagaré recibido no significa hecho efectivo.",
+      "ayuda": "En la ficha de la factura pulsa directamente uno de los botones Efectivo, Tarjeta, Transferencia o Pagaré. El método de cobro NO es un campo del menú Corregir. Efectivo es el valor inicial. Transferencia exige fecha de transferencia; Pagaré recibido exige banco y vencimiento. Al pulsar el método se piden los datos que faltan. Fechas AAAA-MM-DD o DD/MM/AAAA. Después pulsa Aceptar. Pagaré recibido no significa hecho efectivo.",
       "usa_llm": false
     },
     {
