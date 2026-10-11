@@ -16,7 +16,7 @@ function fixture(t, override = {}) {
   const cfg={channels:{telegram:{...policy,accounts:{liki:{...policy}}}}};
   let calls=0;
   const c=new Controller({config:()=>cfg,options:{dataDir:path.join(root,'data'),mediaRoot},extractor:async()=>{calls++;return {...invoice};},...override});
-  t.after(()=>{c.close();fs.rmSync(root,{recursive:true,force:true});});
+  t.after(async()=>{await c.close();fs.rmSync(root,{recursive:true,force:true});});
   const incoming=(fields={})=>c.incoming({account:'liki',sender:'101',isGroup:false,messageId:'1',media:[{path:source}],...fields});
   return {root,source,mediaRoot,c,cfg,incoming,calls:()=>calls};
 }
@@ -119,11 +119,11 @@ test('failed store writes do not acknowledge a saved invoice',async t=>{
  const replies=await f.incoming();assert.match(replies[0].text,/No se pudo completar el guardado/);assert.equal(f.calls(),0);
 });
 test('plugin installs fallback model gate and always claims Liki updates',async t=>{
- const hooks={}, f=fixture(t), replies=[];
- plugin.register({runtime:{config:{current:()=>f.cfg}},pluginConfig:{dataDir:path.join(f.root,'plugin'),mediaRoot:f.mediaRoot},logger:{warn(){}},on:(n,h)=>{hooks[n]=h;},registerInteractiveHandler(){},registerService(){}});
+ const hooks={}, f=fixture(t), replies=[];let service;
+ plugin.register({runtime:{config:{current:()=>f.cfg}},pluginConfig:{dataDir:path.join(f.root,'plugin'),mediaRoot:f.mediaRoot},logger:{warn(){}},on:(n,h)=>{hooks[n]=h;},registerInteractiveHandler(){},registerService(s){service=s;}});
  assert.equal(hooks.before_agent_run({}, {agentId:'liki'}).outcome,'block');assert.equal(hooks.before_agent_run({}, {agentId:'main'}),undefined);
  const result=await hooks.reply_dispatch({ctx:{Provider:'telegram',AccountId:'liki',SenderId:'101',ChatType:'direct',RawBody:'hello'}},{dispatcher:{sendFinalReply:p=>{replies.push(p);return true;},getQueuedCounts:()=>({final:1,block:0,tool:0})},recordProcessed(){},markIdle(){}});
- assert.equal(result.handled,true);assert.match(replies[0].text,/Envía una foto/);
+ assert.equal(result.handled,true);assert.match(replies[0].text,/Envía una foto/);await service.stop();
 });
 test('vision request is isolated, uses only configured Luna, no tools, and releases run authority',async t=>{
  const f=fixture(t);const {extract,isExtractionRun}=await import('./extract.mjs');let observed;

@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "estado": "implementado",
   "empresas": {
     "D": "DIBOS",
@@ -237,5 +237,10 @@
       "ayuda": "Puedes preguntar cómo editar, consultar o cerrar y hacer preguntas de seguimiento. Luna explica el manual con sus palabras. La ayuda no ve tus fotos ni listas y nunca cambia datos. Solo trata Liquidator. Recuerda hasta tres intercambios durante 15 minutos; /ayuda olvida ese contexto. Máximo 20 consultas al día por usuario, 4 por minuto y 200 al día entre todos.",
       "usa_llm": true
     }
-  ]
+  ],
+  "registro_conversaciones": {
+    "habilitado": true,
+    "retencion_dias": 90,
+    "max_bytes_dia": 5242880
+  }
 }

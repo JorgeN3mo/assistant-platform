@@ -13,6 +13,7 @@ projects/liquidator/
 ├── openclaw-plugin/
 │   ├── funciones.json     # Contrato: empresas, campos, métodos, acciones, manual y límites
 │   ├── catalog.mjs        # Lectura del contrato
+│   ├── conversations.mjs # Archivo privado de conversaciones, 90 días
 │   ├── help.mjs           # Luna redacta ayuda con contexto breve, sin ejecutar acciones
 │   ├── index.js           # Entrada JavaScript nativa de OpenClaw
 │   ├── plugin.mjs         # Intercepta mensajes, botones y bloquea chat libre
@@ -32,6 +33,7 @@ projects/liquidator/
 ├── users/<telegram_id>/profile.json           # Fuente administrativa del acceso
 ├── users-access.json                         # Recibo de permisos aplicados
 ├── runtime/liquidator.sqlite3                # Fichas, estado, intentos e historial
+├── runtime/conversations/AAAA-MM-DD.jsonl     # Conversaciones de ayuda, 90 días
 └── invoices/<telegram_id>/<referencia>/
     ├── original.<jpg|png|pdf>                 # Bytes recibidos, sin modificar
     └── metadata.json                         # Recibo inmutable del guardado
@@ -45,6 +47,9 @@ manualmente. Los comandos, botones y remitentes se validan antes de invocar Luna
 Texto ajeno al menú consulta la ayuda del manual con redacción personalizada y contexto
 breve. Límites por usuario y cupo global de 200 llamadas/día; desconocidos y grupos
 no se procesan. `/ayuda` olvida el contexto. Ver el contrato para controles y alcance.
+Las conversaciones de ayuda se archivan en texto JSONL privado durante 90 días,
+para estudio posterior, sin encuestas ni incorporación al contexto de Luna. No se
+copian fotos, fichas, listas ni ediciones de facturas.
 Solicitudes de acceso y avisos al administrador siguen aplazados.
 
 ## Desarrollo y despliegue

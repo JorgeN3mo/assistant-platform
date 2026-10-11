@@ -1,6 +1,7 @@
 import {Store, UserError, readAttachment, userId, EDIT_FIELDS, money} from './store.mjs';
 import {extract} from './extract.mjs';
 import {assist} from './help.mjs';
+import {ConversationArchive} from './conversations.mjs';
 import {catalog, enabled, command, company, companyCode, shortNumber, methodLabel, menu} from './catalog.mjs';
 
 export function authorized(cfg, account, sender, isGroup, expectedAccount='liki') {
@@ -42,10 +43,15 @@ export class Controller {
   constructor({config,runtime,options={},extractor=extract,helper=assist,logger={warn(){}}}){
     this.config=config;this.runtime=runtime;this.extractor=extractor;this.helper=helper;this.logger=logger;
     this.options={dataDir:'/data/liquidator',mediaRoot:'/data/openclaw/state/media',accountId:'liki',maxBytes:10485760,dailyLimit:30,extractionEnabled:true,...options};
+    this.archive=new ConversationArchive(this.options.dataDir,{logger});
     this.activeReads=0;this.activeHelp=0;this.helpUsers=new Set();this.helpEpoch=new Map();this.storeValue=null;
   }
   get store(){if(!this.storeValue){this.storeValue=new Store(this.options.dataDir);this.storeValue.recoverInterrupted();}return this.storeValue;}
-  close(){this.storeValue?.close();}
+  close(){this.storeValue?.close();return this.archive.flush();}
+  conversation(sender,messageId,question,response,status,telemetry={}){
+    try{if(this.permitted(this.options.accountId,sender,false))this.archive.record({sender,messageId,question,response,status,model:telemetry.model,provider:telemetry.provider});}catch{/* Logging must never fail a reply. */}
+    return message(response);
+  }
   permitted(account,sender,isGroup){return authorized(this.config(),account,sender,isGroup,this.options.accountId);}
   async reading(sender,id,account){
     if(!enabled('extraer_factura')||!this.options.extractionEnabled)throw new UserError('Lectura automática desactivada. El archivo está guardado.');
@@ -57,20 +63,23 @@ export class Controller {
     finally{this.activeReads--;}
   }
   async help(sender,text,messageId){
-    if(!enabled('ayuda_llm'))return message(menu());
-    if(text.length>catalog.limites.pregunta_caracteres)return message('Resume tu duda en un máximo de 600 caracteres. '+menu());
-    if(this.activeHelp>=2||this.helpUsers.has(sender))return message('La ayuda está ocupada. Puedes usar /ayuda o los botones.');
-    const attempt=this.store.helpStart(sender,messageId??`missing:${text}`);if(!attempt.fresh)return message(attempt.cached);
+    const reply=(answer,status,telemetry)=>this.conversation(sender,messageId,text,answer,status,telemetry);
+    if(!enabled('ayuda_llm'))return reply(menu(),'disabled');
+    if(text.length>catalog.limites.pregunta_caracteres)return reply('Resume tu duda en un máximo de 600 caracteres. '+menu(),'too_long');
+    if(this.activeHelp>=2||this.helpUsers.has(sender))return reply('La ayuda está ocupada. Puedes usar /ayuda o los botones.','busy');
+    let attempt;
+    try{attempt=this.store.helpStart(sender,messageId??`missing:${text}`);}catch(error){if(error instanceof UserError)reply(error.message,'limited');throw error;}
+    if(!attempt.fresh)return message(attempt.cached);
     const epoch=this.helpEpoch.get(sender)??0;
-    this.activeHelp++;this.helpUsers.add(sender);let answer,remember=false,status='failed';
+    this.activeHelp++;this.helpUsers.add(sender);let answer,remember=false,status='failed',telemetry={};
     try{
-      const result=await this.helper(this.runtime,this.config(),text,{history:this.store.helpHistory(sender),onUsage:u=>this.store.helpUsage(sender,attempt.key,u)});
+      const result=await this.helper(this.runtime,this.config(),text,{history:this.store.helpHistory(sender),onUsage:u=>{telemetry=u;this.store.helpUsage(sender,attempt.key,u);}});
       if(typeof result?.text!=='string')throw new Error('Invalid help result');
       answer=result.text;remember=result.remember===true;status=remember?'answered':'outside';
     }catch{answer='No he podido preparar una respuesta válida ahora. Puedes usar /ayuda o los botones.';this.logger.warn('Liquidator: ayuda no disponible o respuesta rechazada; sin reintento ni cambio de modelo.');}
     finally{this.activeHelp--;this.helpUsers.delete(sender);}
     if(!this.permitted(this.options.accountId,sender,false)){remember=false;status='revoked';answer=menu();this.clearHelp(sender);}
-    this.store.helpFinish(sender,attempt.key,answer,{question:text,remember:remember&&(this.helpEpoch.get(sender)??0)===epoch,status});return message(answer);
+    this.store.helpFinish(sender,attempt.key,answer,{question:text,remember:remember&&(this.helpEpoch.get(sender)??0)===epoch,status});return reply(answer,status,telemetry);
   }
   clearHelp(sender){this.helpEpoch.set(sender,(this.helpEpoch.get(sender)??0)+1);this.store.clearHelpContext(sender);}
   editPrompt(sender,r,field){
@@ -125,7 +134,7 @@ export class Controller {
     if(match){
       const name=match[1].toLowerCase(),args=(match[2]??'').trim(),fn=command(name);
       if(fn){
-        if(fn.id==='ayuda'){this.clearHelp(sender);return [message(menu())];}
+        if(fn.id==='ayuda'){this.clearHelp(sender);return [this.conversation(sender,messageId,t,menu(),'menu')];}
         if(name==='cancelar'){this.store.cancelEdit(sender);return [message('Edición cancelada. '+menu())];}
         if(fn.id==='consultar_listas'){const c=company(name),b=this.store.current(sender,c);return [b?this.batchSheet(sender,b.id):message(`${name.toUpperCase()} · ${c}\nLista nueva vacía. Envía una foto para empezar.`)];}
         if(name==='pendientes'){
@@ -153,7 +162,7 @@ export class Controller {
       requireFunction('corregir_factura');let value=t;if(edit.field==='empresa')value=company(t)??t;
       const r=this.store.change(sender,edit.invoice_id,edit.revision,'edit',{field:edit.field,value});return [this.nextPayment(sender,r)];
     }
-    if(!t||/^(hola|hello|buenas|gracias|ok)[!. ]*$/i.test(t))return [message(menu())];
+    if(!t||/^(hola|hello|buenas|gracias|ok)[!. ]*$/i.test(t))return [t?this.conversation(sender,messageId,t,menu(),'greeting'):message(menu())];
     return [await this.help(sender,t,messageId)];
   }
   async callback({account,sender,isGroup,data}){

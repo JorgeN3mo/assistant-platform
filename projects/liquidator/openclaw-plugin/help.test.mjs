@@ -10,7 +10,7 @@ import {catalog} from './catalog.mjs';
 const cfg={agents:{entries:{liki:{model:{primary:'openai/gpt-6-luna@openai:test'}}}},channels:{telegram:{dmPolicy:'allowlist',allowFrom:['101','102'],accounts:{liki:{dmPolicy:'allowlist',allowFrom:['101','102']}}}}};
 function fixture(t,helper){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'liq-help-'));const c=new Controller({config:()=>structuredClone(cfg),options:{dataDir:root},helper});
- t.after(()=>{c.close();fs.rmSync(root,{recursive:true,force:true});});
+ t.after(async()=>{await c.close();fs.rmSync(root,{recursive:true,force:true});});
  let seq=0;return {root,c,ask:(text,sender='101')=>c.incoming({account:'liki',sender,isGroup:false,text,messageId:'h'+(++seq),media:[]})};
 }
 const answer=(text='Abre /ver 9072 D y pulsa Corregir.')=>({dentro_alcance:true,temas:['corregir_factura'],respuesta:text});

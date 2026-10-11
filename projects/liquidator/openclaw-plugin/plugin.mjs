@@ -41,11 +41,14 @@ export default {
       }
       return {handled: true};
     }});
-    let purgeTimer;
+    let purgeTimer,archiveTimer;
     api.registerService({id: 'liquidator', start() {
       controller.store.purgeHelpContext();
       purgeTimer=setInterval(()=>{try{controller.store.purgeHelpContext();}catch{api.logger.warn('Liquidator: limpieza de contexto pendiente.');}},60000);
       purgeTimer.unref();
-    }, stop() { clearInterval(purgeTimer);controller.close(); }});
+      controller.archive.cleanup();
+      archiveTimer=setInterval(()=>controller.archive.cleanup(),3600000);
+      archiveTimer.unref();
+    }, stop() { clearInterval(purgeTimer);clearInterval(archiveTimer);return controller.close(); }});
   }
 };

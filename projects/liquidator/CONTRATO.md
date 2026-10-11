@@ -1,4 +1,4 @@
-# Contrato de Liquidator (v0.3)
+# Contrato de Liquidator (v0.3.1)
 
 ## Acceso y ejecución
 
@@ -138,3 +138,39 @@ descargas, copias antiguas de entrada o copias de seguridad previas.
 El despliegue guarda una copia privada de SQLite y configuración antes de migrar.
 La migración conserva las fichas existentes; las antiguas descartadas siguen
 archivadas. Las copias periódicas y la política de retención siguen pendientes.
+
+## Registro de conversaciones para revisión posterior
+
+Registro pasivo habilitado en `funciones.json` → `registro_conversaciones`.
+Archivos UTF-8 JSONL diarios en
+`/data/liquidator/runtime/conversations/AAAA-MM-DD.jsonl`, fuera de Git.
+Cada línea conserva fecha UTC, usuario (ID de Telegram privado, no anónimo), ID
+estable de interacción, pregunta, respuesta preparada, resultado y proveedor/modelo
+cuando están disponibles. `entrega: no_verificada` evita confundir una respuesta
+preparada con una entrega confirmada por Telegram. El ID permite deduplicar entradas
+al analizarlas; no se repite el registro al reutilizar una entrega de ayuda ya resuelta.
+
+Se registran únicamente preguntas de ayuda y sus respuestas (también errores,
+rechazos de alcance o límites), saludos/agradecimientos y menú de ayuda. No se
+copian adjuntos, extracción, fichas, listas, CSV, botones operativos ni valores
+introducidos durante la edición de facturas. Si el usuario escribe datos personales
+o de una factura dentro de su pregunta, ese texto sí forma parte de la conversación;
+no se afirma una anonimización automática. No hay encuestas ni valoración inferida.
+
+Retención: últimas 90 fechas naturales UTC, incluyendo hoy. Se eliminan archivos
+anteriores al arrancar y cada hora mientras el servicio está activo; si estuvo
+parado, se limpian al siguiente arranque. Solo se borran archivos regulares con
+nombre de fecha válido y extensión `.jsonl` dentro de esta carpeta.
+
+Carpeta 700 y archivos 600. Máximo 5 MiB por archivo diario y 100 escrituras en cola;
+preguntas de hasta 600 caracteres y respuestas de hasta 2200, con `recortado` cuando
+se supera ese tamaño. Si se alcanza el límite o falla el disco, se omite el registro
+y se deja un aviso técnico limitado en frecuencia. La respuesta del bot no espera
+al archivo, no llama a un modelo adicional y no depende de que el registro funcione.
+Un cierre brusco puede perder las últimas escrituras pendientes; no es un registro
+transaccional de facturas. No se retrocargan conversaciones antiguas.
+
+Este archivo es solo para estudio futuro. No se lee como memoria ni contexto de
+Luna y no cambia la ventana de conversación de 15 minutos. Su retención es
+independiente de los registros operativos y del caché de entregas de SQLite. No se
+crean copias adicionales del archivo ni se programa análisis automático.
