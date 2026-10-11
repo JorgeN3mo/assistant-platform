@@ -1,5 +1,31 @@
 # Validación — 11 de octubre de 2026
 
+## Registro pasivo de conversaciones v0.3.1
+
+Código desplegado: `5cfb171`. Pasan 43 pruebas Node y 11 de usuarios Python.
+Las pruebas nuevas cubren texto UTF-8, permisos privados, retención de 90 fechas
+UTC incluyendo hoy, exclusión de archivos ajenos, enlaces simbólicos, límites de
+cola/tamaño, truncamiento explícito y errores que no bloquean la respuesta.
+
+Integración con el cargador real de OpenClaw y Luna en MiniGUN, con almacenamiento
+temporal privado y sin enviar mensajes a Telegram:
+
+- Consulta de ayuda guardada con su respuesta real, proveedor y modelo Luna.
+  Repetir la misma entrega no generó otra llamada ni otra entrada de ayuda.
+- Saludo y menú guardados; remitente no autorizado, comandos operativos,
+  documento PDF, su texto adjunto y valor introducido al corregir cliente excluidos.
+- Archivo diario de texto JSONL con permisos 600, directorio 700.
+- Eliminación comprobada de un archivo de hace 90 días; conservados el de hace
+  89 días y un archivo ajeno al registro. No se leyó el archivo de producción.
+- Integridad SQLite correcta; pruebas temporales eliminadas al terminar.
+
+OpenClaw quedó activo tras desplegar. La entrega de respuestas se marca como
+`no_verificada`: se registra lo generado, sin afirmar recepción o satisfacción.
+No hay encuestas, análisis automático ni incorporación de este archivo al contexto
+del modelo. La revisión posterior sigue pendiente de decisión del administrador.
+
+## Validación de ayuda v0.3
+
 Ayuda personalizada v0.3 desplegada: `cb8a3dd`. MiniGUN, servicio activo.
 
 ## Ayuda con redacción libre y límites

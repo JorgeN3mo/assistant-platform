@@ -10,6 +10,8 @@
 
 La ayuda personalizada, el contexto breve y sus límites se desplegaron y validaron
 con Luna real el 11 de octubre de 2026. Falta la comprobación de experiencia móvil.
+El registro pasivo de conversaciones también está desplegado y validado: texto
+privado durante 90 días, sin copias de facturas ni encuestas; revisión futura manual.
 Estamos en la validación integrada de los bloques 3 y 4. Ver [prueba móvil](FACTURAS.md)
 y [evidencias técnicas](VALIDACION.md). No considerar la prueba del backend como
 certificación de que Telegram entrega correctamente todas las pantallas y archivos.
