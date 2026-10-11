@@ -1,4 +1,4 @@
-# Contrato de Liquidator (v0.2)
+# Contrato de Liquidator (v0.3)
 
 ## Acceso y ejecución
 
@@ -13,13 +13,54 @@ operaciones. Cambiar este fichero requiere desplegarlo de nuevo.
 
 Fotos y comandos reconocidos entran a flujos cerrados. Las preguntas o comandos
 desconocidos de usuarios autorizados consultan Luna con razonamiento bajo, sin
-herramientas, historial de conversación, fotos ni fichas del usuario. El modelo
-selecciona uno o dos apartados del manual; solo se muestran textos del catálogo.
-No genera comandos nuevos ni ejecuta acciones. Si falla, se muestra el menú.
-Límites persistentes: 20 consultas/día UTC, 4/minuto, pregunta de 600 caracteres,
-25 segundos, dos ayudas simultáneas por proceso. Se solicitan hasta 512 tokens de
-salida al proveedor (parámetro best-effort de OpenClaw, no garantía de facturación).
-Los comandos válidos y botones no usan el modelo de ayuda.
+herramientas ni fotos/fichas reales. Luna redacta una explicación propia a partir
+del manual; puede combinar pasos, adaptar ejemplos o pedir aclaración. El alcance
+es el uso de Liquidator, excluyendo asesoramiento fiscal/bancario general y otros
+temas. Una respuesta temática incorrecta sigue siendo posible: el prompt no es
+una garantía semántica. La ayuda nunca interpreta su salida como una acción.
+
+La salida exige JSON con `dentro_alcance`, IDs del manual habilitado y `respuesta`.
+El código rechaza estructuras inválidas, comandos inexistentes/deshabilitados,
+enlaces, HTML y textos de más de 1600 caracteres. No se reintenta ante errores.
+El rechazo de alcance es fijo; las respuestas válidas son redactadas por el modelo.
+
+Contexto: últimos tres intercambios de ayuda del mismo usuario, de menos de 15
+minutos. Se conserva entre reinicios en SQLite y se purga al arrancar, cada minuto
+y al consultar; nunca se reutiliza un intercambio caducado. `/ayuda` y `/start`
+olvidan ese contexto. No se incluyen consultas rechazadas ni respuestas fallidas.
+El historial y la pregunta se tratan como datos no confiables; solo el catálogo
+vigente es fuente de reglas. El contexto montado tiene un máximo de 16000 caracteres
+(excluye el envoltorio interno que añade OpenClaw). Se descartan intercambios antiguos
+si no caben. Se admite una ayuda simultánea por usuario y dos por proceso.
+
+Límites persistentes: 20 consultas/día UTC por usuario, 4/minuto, máximo global de
+200 llamadas de ayuda/día UTC, pregunta de 600 caracteres y 25 segundos por llamada.
+El cupo se reserva en una transacción antes de la inferencia, incluyendo llamadas
+en curso y fallidas. No se devuelve cupo ante errores o resultados desconocidos.
+Al agotarse la ayuda, los comandos y botones continúan disponibles. El cupo global
+limita llamadas, no equivale a un techo de facturación en euros.
+
+Se solicitan hasta 512 tokens de salida (`streamParams.maxTokens`), razonamiento
+`low`, `fastMode: false`, modelo exacto `openai/gpt-6-luna` y ninguna alternativa.
+Se exige que los metadatos del resultado confirmen ese proveedor/modelo. Si falta
+esa confirmación o falla el modelo, se muestra ayuda básica sin cambiar de modelo.
+Los metadatos detectan desviaciones después de una llamada; la restricción previa
+en código y OpenClaw sigue siendo necesaria para impedir rutas alternativas.
+
+`help_calls` registra reserva, resultado, proveedor, modelo y contadores de tokens
+(incluyendo razonamiento si está disponible), duración y valores desconocidos como
+NULL. No contiene preguntas, respuestas ni credenciales. `help_context` conserva
+el historial breve. El caché de respuestas de entregas `help_replies`, ya existente,
+es independiente de ese contexto; no se usa como memoria del modelo.
+La adición de estas tablas mantiene compatible el esquema 2 para poder volver al
+plugin anterior sin deshacer las facturas. La copia privada previa al despliegue
+sigue siendo obligatoria.
+
+Antes de sustituir un modelo: revisar retirada/disponibilidad y probar el nuevo
+candidato con preguntas de uso, seguimientos e intentos de desviar el tema. Nunca
+sustituir automáticamente por otro más caro. Los controles de tokens del proveedor
+se deben validar para la vía de autenticación realmente utilizada; un parámetro
+best-effort o una respuesta breve no demuestran un límite de consumo garantizado.
 
 ## Facturas y cobro
 

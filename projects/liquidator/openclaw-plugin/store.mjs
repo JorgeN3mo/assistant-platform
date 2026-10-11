@@ -202,13 +202,21 @@ export class Store {
         CREATE INDEX IF NOT EXISTS usage_owner ON usage(owner,kind,at);
         CREATE TABLE IF NOT EXISTS help_replies (owner TEXT NOT NULL, delivery TEXT NOT NULL, response TEXT, PRIMARY KEY(owner,delivery));
         CREATE TABLE IF NOT EXISTS sources (invoice_id TEXT NOT NULL, path TEXT NOT NULL, UNIQUE(invoice_id,path));
-        CREATE TABLE IF NOT EXISTS exports (batch_id INTEGER NOT NULL, path TEXT NOT NULL PRIMARY KEY);`);
+        CREATE TABLE IF NOT EXISTS exports (batch_id INTEGER NOT NULL, path TEXT NOT NULL PRIMARY KEY);
+        CREATE TABLE IF NOT EXISTS help_context (
+          id INTEGER PRIMARY KEY, owner TEXT NOT NULL, question TEXT NOT NULL, response TEXT NOT NULL, at TEXT NOT NULL);
+        CREATE INDEX IF NOT EXISTS help_context_owner ON help_context(owner,at);
+        CREATE TABLE IF NOT EXISTS help_calls (
+          owner TEXT NOT NULL, delivery TEXT NOT NULL, started_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'reserved',
+          provider TEXT, model TEXT, input_tokens INTEGER, output_tokens INTEGER, cache_read INTEGER, cache_write INTEGER,
+          reasoning_tokens INTEGER, total_tokens INTEGER, duration_ms INTEGER, PRIMARY KEY(owner,delivery));`);
       if (version < 2) {
         this.db.exec("INSERT INTO usage(owner,kind,at) SELECT owner,'extract',at FROM attempts");
         for (const r of this.db.prepare("SELECT id,owner,data FROM invoices WHERE state!='descartada'").all()) this.assign(r.owner, r.id, JSON.parse(r.data).empresa);
         this.db.exec('PRAGMA user_version=2');
       }
     });
+    this.purgeHelpContext();
     for (const r of this.db.prepare("SELECT owner,id FROM invoices WHERE state='eliminando'").all()) this.finishDelete(r.owner,r.id);
   }
   consume(owner, kind, daily, perMinute) {
@@ -218,16 +226,43 @@ export class Store {
     this.db.prepare('INSERT INTO usage(owner,kind,at) VALUES (?,?,?)').run(owner,kind,date);
   }
   helpStart(owner, delivery) {
+    userId(owner);
     return this.transaction(() => {
       const key=sha(String(delivery));
       const prior=this.db.prepare('SELECT response FROM help_replies WHERE owner=? AND delivery=?').get(owner,key);
       if (prior) return {key, cached:prior.response ?? 'La ayuda anterior sigue en curso o se interrumpió. Usa /ayuda.', fresh:false};
+      // Reserve before starting inference. Errors/timeouts are never refunded,
+      // because the provider may already have consumed tokens.
+      if(this.db.prepare("SELECT count(*) n FROM usage WHERE kind='help' AND at>=?").get(now().slice(0,10)).n>=catalog.limites.ayuda_global_diaria)throw new UserError('La ayuda ha alcanzado su cupo diario global. Puedes seguir usando /ayuda, comandos y botones.');
       this.consume(owner,'help',catalog.limites.ayuda_diaria,catalog.limites.ayuda_minuto);
       this.db.prepare('INSERT INTO help_replies VALUES (?,?,NULL)').run(owner,key);
+      this.db.prepare('INSERT INTO help_calls(owner,delivery,started_at) VALUES (?,?,?)').run(owner,key,now());
       return {key,fresh:true};
     });
   }
-  helpFinish(owner,key,response) { this.db.prepare('UPDATE help_replies SET response=? WHERE owner=? AND delivery=?').run(response,owner,key); }
+  helpUsage(owner,key,u) {
+    const count=v=>Number.isSafeInteger(v)&&v>=0?v:null;
+    this.db.prepare('UPDATE help_calls SET provider=?,model=?,input_tokens=?,output_tokens=?,cache_read=?,cache_write=?,reasoning_tokens=?,total_tokens=?,duration_ms=? WHERE owner=? AND delivery=?')
+      .run(typeof u.provider==='string'?u.provider.slice(0,100):null,typeof u.model==='string'?u.model.slice(0,100):null,
+        count(u.input),count(u.output),count(u.cacheRead),count(u.cacheWrite),count(u.reasoning),count(u.total),count(u.durationMs),owner,key);
+  }
+  purgeHelpContext(){this.db.prepare('DELETE FROM help_context WHERE at<=?').run(new Date(Date.now()-catalog.limites.historial_minutos*60000).toISOString());}
+  clearHelpContext(owner){this.db.prepare('DELETE FROM help_context WHERE owner=?').run(userId(owner));}
+  helpHistory(owner){
+    userId(owner);this.purgeHelpContext();
+    return this.db.prepare('SELECT question,response FROM help_context WHERE owner=? ORDER BY id DESC LIMIT ?').all(owner,catalog.limites.historial_intercambios).reverse();
+  }
+  helpFinish(owner,key,response,{question,remember=false,status='failed'}={}) {
+    this.transaction(()=>{
+      this.db.prepare('UPDATE help_replies SET response=? WHERE owner=? AND delivery=?').run(response,owner,key);
+      this.db.prepare('UPDATE help_calls SET status=? WHERE owner=? AND delivery=?').run(status,owner,key);
+      this.purgeHelpContext();
+      if(remember){
+        this.db.prepare('INSERT INTO help_context(owner,question,response,at) VALUES (?,?,?,?)').run(owner,question,response,now());
+        this.db.prepare('DELETE FROM help_context WHERE owner=? AND id NOT IN (SELECT id FROM help_context WHERE owner=? ORDER BY id DESC LIMIT ?)').run(owner,owner,catalog.limites.historial_intercambios);
+      }
+    });
+  }
   current(owner, company, create=false) {
     userId(owner);if (!COMPANIES.includes(company)) throw new UserError('Empresa no válida.');
     let b=this.db.prepare("SELECT * FROM batches WHERE owner=? AND company=? AND state='abierta'").get(owner,company);

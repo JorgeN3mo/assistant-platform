@@ -41,6 +41,11 @@ export default {
       }
       return {handled: true};
     }});
-    api.registerService({id: 'liquidator', start() {}, stop() { controller.close(); }});
+    let purgeTimer;
+    api.registerService({id: 'liquidator', start() {
+      controller.store.purgeHelpContext();
+      purgeTimer=setInterval(()=>{try{controller.store.purgeHelpContext();}catch{api.logger.warn('Liquidator: limpieza de contexto pendiente.');}},60000);
+      purgeTimer.unref();
+    }, stop() { clearInterval(purgeTimer);controller.close(); }});
   }
 };

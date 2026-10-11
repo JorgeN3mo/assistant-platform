@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "estado": "implementado",
   "empresas": {
     "D": "DIBOS",
@@ -96,7 +96,12 @@
     "ayuda_minuto": 4,
     "pregunta_caracteres": 600,
     "respuesta_tokens": 512,
-    "ayuda_segundos": 25
+    "ayuda_segundos": 25,
+    "ayuda_global_diaria": 200,
+    "historial_intercambios": 3,
+    "historial_minutos": 15,
+    "respuesta_caracteres": 1600,
+    "contexto_caracteres": 16000
   },
   "funciones": [
     {
@@ -228,8 +233,8 @@
       "id": "ayuda_llm",
       "comandos": [],
       "habilitada": true,
-      "descripcion": "Ayuda sobre el funcionamiento, sin ejecutar acciones.",
-      "ayuda": "Puedes preguntar cómo editar, consultar o cerrar. La ayuda no ve tus fotos ni listas y nunca cambia datos. Fuera de Liquidator no responde. Límite de 20 consultas al día y 4 por minuto.",
+      "descripcion": "Ayuda redactada por Luna sobre el manual, sin ejecutar acciones.",
+      "ayuda": "Puedes preguntar cómo editar, consultar o cerrar y hacer preguntas de seguimiento. Luna explica el manual con sus palabras. La ayuda no ve tus fotos ni listas y nunca cambia datos. Solo trata Liquidator. Recuerda hasta tres intercambios durante 15 minutos; /ayuda olvida ese contexto. Máximo 20 consultas al día por usuario, 4 por minuto y 200 al día entre todos.",
       "usa_llm": true
     }
   ]

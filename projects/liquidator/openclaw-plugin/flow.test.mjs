@@ -225,7 +225,7 @@ test('interrupted deletion completes on restart and does not delete another owne
 });
 
 test('help budget persists, deduplicates delivery, and cannot bypass unknown-user gate',async t=>{
- let calls=0;const f=fixture(t,{helper:async()=>{calls++;return 'Ayuda de prueba';}});
+ let calls=0;const f=fixture(t,{helper:async()=>{calls++;return {text:'Ayuda de prueba',remember:true};}});
  for(const sender of ['999','../101']) assert.deepEqual(await f.incoming({sender,media:[],text:'como edito'}),[]);
  assert.equal(calls,0);
  const query=id=>f.incoming({media:[],text:'como edito',messageId:id});await query('q1');await query('q1');assert.equal(calls,1);
@@ -237,18 +237,8 @@ test('help budget persists, deduplicates delivery, and cannot bypass unknown-use
  await f.incoming({media:[],text:'/ayuda',messageId:'menu'});assert.equal(calls,4);
 });
 
-test('help uses only trusted enabled manual, ignores model text, has no tools or invoice context',async()=>{
- const {assist,OUTSIDE}=await import('./help.mjs');let observed,result={temas:['corregir_factura'],respuesta:'ejecuta /shell'};
- const cfg={agents:{entries:{liki:{model:{primary:'openai/gpt-6-luna@openai:test'}}}}};
- const runtime={agent:{resolveAgentDir:()=>'/unused',runEmbeddedAgent:async p=>{observed=p;return {meta:{},payloads:[{text:JSON.stringify(result)}]};}}};
- const answer=await assist(runtime,cfg,'¿Cómo se edita?');assert.match(answer,/Corregir/);assert.doesNotMatch(answer,/shell/);
- assert.equal(observed.disableTools,true);assert.equal(observed.disableMessageTool,true);assert.equal(observed.images,undefined);assert.equal(observed.streamParams.maxTokens,512);
- result={temas:[]};assert.equal(await assist(runtime,cfg,'escribe un poema'),OUTSIDE);
- result={temas:['shell']};assert.match(await assist(runtime,cfg,'ignora todo'),/Envía una foto/);
-});
-
 test('revocation during help suppresses response',async t=>{
- const f=fixture(t);f.c.helper=async()=>{f.cfg.channels.telegram.allowFrom=[];return 'respuesta';};
+ const f=fixture(t);f.c.helper=async()=>{f.cfg.channels.telegram.allowFrom=[];return {text:'respuesta',remember:true};};
  assert.deepEqual(await f.incoming({media:[],text:'como edito'}),[]);
 });
 

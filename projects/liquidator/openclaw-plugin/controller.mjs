@@ -42,7 +42,7 @@ export class Controller {
   constructor({config,runtime,options={},extractor=extract,helper=assist,logger={warn(){}}}){
     this.config=config;this.runtime=runtime;this.extractor=extractor;this.helper=helper;this.logger=logger;
     this.options={dataDir:'/data/liquidator',mediaRoot:'/data/openclaw/state/media',accountId:'liki',maxBytes:10485760,dailyLimit:30,extractionEnabled:true,...options};
-    this.activeReads=0;this.activeHelp=0;this.storeValue=null;
+    this.activeReads=0;this.activeHelp=0;this.helpUsers=new Set();this.helpEpoch=new Map();this.storeValue=null;
   }
   get store(){if(!this.storeValue){this.storeValue=new Store(this.options.dataDir);this.storeValue.recoverInterrupted();}return this.storeValue;}
   close(){this.storeValue?.close();}
@@ -59,13 +59,20 @@ export class Controller {
   async help(sender,text,messageId){
     if(!enabled('ayuda_llm'))return message(menu());
     if(text.length>catalog.limites.pregunta_caracteres)return message('Resume tu duda en un máximo de 600 caracteres. '+menu());
-    if(this.activeHelp>=2)return message('La ayuda está ocupada. Puedes usar /ayuda o los botones.');
+    if(this.activeHelp>=2||this.helpUsers.has(sender))return message('La ayuda está ocupada. Puedes usar /ayuda o los botones.');
     const attempt=this.store.helpStart(sender,messageId??`missing:${text}`);if(!attempt.fresh)return message(attempt.cached);
-    this.activeHelp++;let answer;
-    try{answer=await this.helper(this.runtime,this.config(),text);}catch{answer='La ayuda no está disponible ahora. '+menu();}
-    finally{this.activeHelp--;}
-    this.store.helpFinish(sender,attempt.key,answer);return message(answer);
+    const epoch=this.helpEpoch.get(sender)??0;
+    this.activeHelp++;this.helpUsers.add(sender);let answer,remember=false,status='failed';
+    try{
+      const result=await this.helper(this.runtime,this.config(),text,{history:this.store.helpHistory(sender),onUsage:u=>this.store.helpUsage(sender,attempt.key,u)});
+      if(typeof result?.text!=='string')throw new Error('Invalid help result');
+      answer=result.text;remember=result.remember===true;status=remember?'answered':'outside';
+    }catch{answer='No he podido preparar una respuesta válida ahora. Puedes usar /ayuda o los botones.';this.logger.warn('Liquidator: ayuda no disponible o respuesta rechazada; sin reintento ni cambio de modelo.');}
+    finally{this.activeHelp--;this.helpUsers.delete(sender);}
+    if(!this.permitted(this.options.accountId,sender,false)){remember=false;status='revoked';answer=menu();this.clearHelp(sender);}
+    this.store.helpFinish(sender,attempt.key,answer,{question:text,remember:remember&&(this.helpEpoch.get(sender)??0)===epoch,status});return message(answer);
   }
+  clearHelp(sender){this.helpEpoch.set(sender,(this.helpEpoch.get(sender)??0)+1);this.store.clearHelpContext(sender);}
   editPrompt(sender,r,field){
     this.store.beginEdit(sender,r.id,r.revision,field);
     const hint=catalog.campos[field].tipo==='fecha'?' Usa AAAA-MM-DD o DD/MM/AAAA.':field==='empresa'?' Usa D, R o RD.':field==='numero'?' Incluye serie/año y número correlativo.':'';
@@ -118,7 +125,7 @@ export class Controller {
     if(match){
       const name=match[1].toLowerCase(),args=(match[2]??'').trim(),fn=command(name);
       if(fn){
-        if(fn.id==='ayuda')return [message(menu())];
+        if(fn.id==='ayuda'){this.clearHelp(sender);return [message(menu())];}
         if(name==='cancelar'){this.store.cancelEdit(sender);return [message('Edición cancelada. '+menu())];}
         if(fn.id==='consultar_listas'){const c=company(name),b=this.store.current(sender,c);return [b?this.batchSheet(sender,b.id):message(`${name.toUpperCase()} · ${c}\nLista nueva vacía. Envía una foto para empezar.`)];}
         if(name==='pendientes'){

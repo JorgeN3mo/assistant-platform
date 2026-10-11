@@ -13,7 +13,7 @@ projects/liquidator/
 ├── openclaw-plugin/
 │   ├── funciones.json     # Contrato: empresas, campos, métodos, acciones, manual y límites
 │   ├── catalog.mjs        # Lectura del contrato
-│   ├── help.mjs           # Luna selecciona ayuda del manual, sin ejecutar acciones
+│   ├── help.mjs           # Luna redacta ayuda con contexto breve, sin ejecutar acciones
 │   ├── index.js           # Entrada JavaScript nativa de OpenClaw
 │   ├── plugin.mjs         # Intercepta mensajes, botones y bloquea chat libre
 │   ├── controller.mjs     # Acciones cerradas, acceso y fichas de revisión
@@ -42,7 +42,9 @@ projects/liquidator/
 
 Después de cambiar perfiles: `scripts/usuarios.sh aplicar`. No editar varias listas
 manualmente. Los comandos, botones y remitentes se validan antes de invocar Luna.
-Texto ajeno al menú consulta la ayuda del manual con límites; desconocidos y grupos no se procesan.
+Texto ajeno al menú consulta la ayuda del manual con redacción personalizada y contexto
+breve. Límites por usuario y cupo global de 200 llamadas/día; desconocidos y grupos
+no se procesan. `/ayuda` olvida el contexto. Ver el contrato para controles y alcance.
 Solicitudes de acceso y avisos al administrador siguen aplazados.
 
 ## Desarrollo y despliegue

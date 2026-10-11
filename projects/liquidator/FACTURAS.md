@@ -19,7 +19,9 @@
    `/historial`, reabre la anterior, corrige una factura, vuelve a aceptarla y cierra.
    El nuevo CSV tiene otra versión. Las fotos nuevas no entran en la reabierta.
 9. Pregunta «¿cómo edito una factura?» o escribe mal un comando: la ayuda consulta
-   el manual con Luna. No puede modificar ni comprobar las facturas por ti.
+   el manual con Luna y redacta una explicación adaptada. Sigue con «¿y si ya la
+   cerré?» para probar el contexto. `/ayuda` lo reinicia. No puede modificar ni
+   comprobar las facturas por ti.
 
 No hace falta una foto perfecta. «Volver a leer la foto» aparece cuando hay dudas
 u omisiones; conserva el método y los datos de cobro introducidos. Una nueva foto

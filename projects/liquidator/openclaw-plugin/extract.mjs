@@ -20,7 +20,7 @@ export const SCHEMA = {
 const authorityKey = Symbol.for('assistant-platform.liquidator.active-extractions.v1');
 const activeRuns = process[authorityKey] ??= new Set();
 export const isExtractionRun = id => activeRuns.has(id);
-export async function runLuna(runtime, cfg, {prompt, images, workspaceDir, purpose='help', timeoutMs=25000, maxTokens=512}) {
+export async function runLuna(runtime, cfg, {prompt, images, workspaceDir, purpose='help', timeoutMs=25000, maxTokens=512, onUsage}) {
   const runId = randomUUID(), sessionId = randomUUID();
   const primary = cfg.agents?.entries?.liki?.model?.primary ?? cfg.agents?.defaults?.model?.primary;
   if (typeof primary !== 'string' || primary.split('@')[0] !== 'openai/' + MODEL) throw new Error('Luna policy missing');
@@ -34,10 +34,19 @@ export async function runLuna(runtime, cfg, {prompt, images, workspaceDir, purpo
       ...(at >= 0 ? {authProfileId: primary.slice(at + 1)} : {}),
       prompt, ...(images ? {images} : {}),
       modelRun: true, disableTools: true, disableMessageTool: true, disableTrajectory: true,
-      modelFallbacksOverride: [], thinkLevel: 'low', timeoutMs,
+      modelFallbacksOverride: [], thinkLevel: 'low', fastMode: false, timeoutMs,
       streamParams: {maxTokens}, runTimeoutOverrideMs: timeoutMs, retryConnectionErrors: false, trigger: 'manual'
     });
-    if (output.meta?.error || output.payloads?.some(p => p.isError)) throw new Error('Model runtime failed');
+    const meta = output.meta?.agentMeta;
+    const usage = meta?.diagnosticUsage ?? meta?.usage;
+    const count = value => Number.isSafeInteger(value) && value >= 0 ? value : null;
+    onUsage?.({provider: meta?.provider ?? null, model: meta?.model ?? null,
+      input: count(usage?.input), output: count(usage?.output), cacheRead: count(usage?.cacheRead),
+      cacheWrite: count(usage?.cacheWrite), reasoning: count(usage?.reasoningTokens), total: count(usage?.total), durationMs: count(output.meta?.durationMs)});
+    // Do not display an answer if the runtime cannot attest the allowed model.
+    // Routing is also pinned before the call; this check is not a substitute for it.
+    if (purpose === 'help' && (meta?.provider !== 'openai' || meta?.model !== MODEL || output.meta?.executionTrace?.fallbackUsed)) throw new Error('Help model policy mismatch');
+    if (output.meta?.error || output.meta?.aborted || output.payloads?.some(p => p.isError)) throw new Error('Model runtime failed');
     const text = output.payloads?.filter(p => !p.isReasoning && !p.isCommentary).map(p => p.text ?? '').join('\n').trim().replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '');
     return JSON.parse(text);
   } finally { activeRuns.delete(runId); }
