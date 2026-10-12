@@ -59,6 +59,7 @@ chgrp openclaw /data/liquidator
 chmod 710 /data/liquidator
 install -d -o openclaw -g openclaw -m 700 /data/liquidator/runtime /data/liquidator/invoices
 "$repo/scripts/usuarios.sh" informes
+"$repo/scripts/usuarios.sh" registro
 install -d -m 755 "$(dirname "$dropin")"
 install -m 644 "$repo/openclaw/liquidator.conf" "$dropin"
 # A changed versioned path must replace the previous explicit path, not add a
@@ -91,8 +92,9 @@ if 'liquidator' in plugins.get('deny', []):
     raise SystemExit('Liquidator está denegado explícitamente; revisar política antes de activar.')
 tg = cfg['channels']['telegram']
 account = tg['accounts']['liki']
-assert tg['dmPolicy'] == account['dmPolicy'] == 'allowlist'
+assert tg['dmPolicy'] in ('allowlist', 'pairing') and account['dmPolicy'] in ('allowlist', 'pairing')
 assert tg.get('allowFrom') and account.get('allowFrom'), 'Se exige acceso restringido ya aplicado'
+tg['dmPolicy'] = account['dmPolicy'] = 'pairing'
 account.setdefault('capabilities', {})['inlineButtons'] = 'allowlist'
 st = os.stat(p)
 fd, temporary = tempfile.mkstemp(dir=os.path.dirname(p), prefix='.liquidator-config-')
@@ -120,6 +122,6 @@ import json, sys
 with open(sys.argv[1]) as f:
     r = json.load(f)
 p = r['plugin']
-assert p['status'] == 'loaded' and p['hookCount'] >= 2 and 'liquidator' in p['services'], p.get('error', 'Plugin incompleto')
+assert p['status'] == 'loaded' and p['hookCount'] >= 3 and 'liquidator' in p['services'], p.get('error', 'Plugin incompleto')
 PY
 echo "Liquidator activado. Copia de configuración privada: $backup"

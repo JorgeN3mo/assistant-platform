@@ -14,7 +14,7 @@ miniGUN -t /opt/ai-platform/scripts/configure-liki.sh
 
 El comando pide el token con entrada oculta, verifica el bot mediante Telegram, guarda el token y activa la conexión. Conserva las restricciones de acceso existentes. La conexión ya está configurada; solo es necesario repetirlo para cambiar el token.
 
-El acceso privado utiliza ahora `dmPolicy: allowlist`, con solo el identificador del administrador tanto en la configuración general como en la cuenta `liki`. No se admiten nuevas solicitudes de emparejamiento. El identificador real se mantiene fuera de este repositorio público. Los grupos están deshabilitados y el agente no puede ejecutar herramientas. Las conversaciones privadas tienen sesiones separadas por cuenta, canal y usuario.
+El acceso privado utiliza `dmPolicy: pairing` para recibir solicitudes sin procesar mensajes de desconocidos. Liquidator exige además presencia en ambas listas explícitas `allowFrom`, general y de la cuenta `liki`, publicadas por `usuarios.sh aplicar`. Aprobar un código nativo no concede acceso a Liquidator. Ver USUARIOS.md para el registro por enlace y sus límites. El identificador real se mantiene fuera de este repositorio público. Los grupos están deshabilitados y el agente no puede ejecutar herramientas. Las conversaciones privadas tienen sesiones separadas por cuenta, canal y usuario.
 
 La política `modelPolicy.allow` admite únicamente `openai/gpt-6-luna`. El modelo principal y el auxiliar son Luna, con razonamiento bajo y sin fallbacks. Los comandos de texto y nativos, los cambios de configuración desde Telegram y las tareas periódicas están deshabilitados. El acceso inicial se aprobó por emparejamiento y después se cerró con la lista explícita de usuarios.
 

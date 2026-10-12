@@ -137,10 +137,38 @@ class Registry:
         profile['estado'] = state
         atomic_json(path, profile)
 
+    def requests(self):
+        folder = self.data / 'runtime' / 'access-requests'
+        if folder.is_symlink():
+            raise RegistryError('Directorio de solicitudes no válido.')
+        if not folder.exists():
+            return []
+        result = []
+        for path in sorted(folder.glob('*.json')):
+            user_id = identifier(path.stem)
+            if path.stat().st_size > 16384:
+                raise RegistryError('Solicitud demasiado grande.')
+            request = load_json(path)
+            if not isinstance(request, dict) or request.get('telegram_id') != user_id:
+                raise RegistryError('ID de solicitud no válido.')
+            for key in ['nombre', 'username', 'solicitado_en', 'aviso']:
+                if not isinstance(request.get(key), str) or len(request[key]) > 200 or re.search(r'[\x00-\x1f\x7f]', request[key]):
+                    raise RegistryError('Datos de solicitud no válidos.')
+            result.append(request)
+        return result
+
+    def import_request(self, user_id):
+        identifier(user_id)
+        self.read()
+        request = next((r for r in self.requests() if r['telegram_id'] == user_id), None)
+        if request is None:
+            raise RegistryError('No existe esa solicitud.')
+        self.add(user_id, request['nombre'])  # Always pending; never overwrites a profile.
+
 
 def access_patch(profiles):
     allowed = sorted((p['telegram_id'] for p in profiles if p['estado'] == 'activo'), key=int)
-    policy = {'dmPolicy': 'allowlist' if allowed else 'disabled', 'allowFrom': allowed,
+    policy = {'dmPolicy': 'pairing', 'allowFrom': allowed,
               'groupPolicy': 'disabled', 'configWrites': False}
     return {'channels': {'telegram': dict(policy, accounts={'liki': dict(policy)})}}
 
@@ -157,6 +185,18 @@ def publish_report_names(registry):
             names[profile['telegram_id']] = name
     target = registry.data / 'report-users.json'
     atomic_json(target, names)
+    if registry.data == DATA:
+        os.chown(target, 0, grp.getgrnam('openclaw').gr_gid)
+    os.chmod(target, 0o640)
+
+
+def publish_registration_policy(registry):
+    profiles = registry.read()
+    target = registry.data / 'registration-policy.json'
+    atomic_json(target, {
+        'known_ids': [p['telegram_id'] for p in profiles],
+        'admin_ids': [p['telegram_id'] for p in profiles if p['estado'] == 'activo' and p['rol'] == 'admin'],
+    })
     if registry.data == DATA:
         os.chown(target, 0, grp.getgrnam('openclaw').gr_gid)
     os.chmod(target, 0o640)
@@ -201,12 +241,13 @@ def apply_registry(registry, preview=False):
         raise RegistryError('Esta herramienta requiere que Liki sea la única cuenta Telegram; revisar antes de sincronizar otras cuentas.')
     call_admin(['config', 'patch', '--stdin', '--dry-run'], patch)
     active = patch['channels']['telegram']['allowFrom']
-    print('Usuarios que tendrán acceso:', ', '.join(active) or 'ninguno (bot cerrado)')
+    print('Usuarios que tendrán acceso:', ', '.join(active) or 'ninguno (solo solicitudes)')
     if preview:
         print('Vista previa: no se han cambiado permisos.')
         return
     if registry.read() != profiles:
         raise RegistryError('Los perfiles cambiaron durante la validación. Vuelve a aplicar.')
+    publish_registration_policy(registry)
     call_admin(['config', 'patch', '--stdin'], patch)
     for attempt in range(6):
         result, loaded = gateway_config()
@@ -230,6 +271,9 @@ def main():
     parser = argparse.ArgumentParser(description='Gestionar perfiles JSON privados de Liki.')
     sub = parser.add_subparsers(dest='command', required=True)
     sub.add_parser('listar')
+    sub.add_parser('solicitudes')
+    sub.add_parser('registro')
+    sub.add_parser('importar').add_argument('telegram_id')
     add = sub.add_parser('anadir')
     add.add_argument('telegram_id')
     add.add_argument('--nombre', required=True)
@@ -250,6 +294,18 @@ def main():
             registry.read()
             registry.add(args.telegram_id, args.nombre, args.rol)
             print('Perfil creado como pendiente; todavía no tiene acceso.')
+        elif args.command == 'solicitudes':
+            profiles = {p['telegram_id']: p['estado'] for p in registry.read()}
+            print('TELEGRAM_ID\tESTADO\tFECHA\tAVISO\tNOMBRE\tALIAS')
+            for r in registry.requests():
+                print('\t'.join([r['telegram_id'], profiles.get(r['telegram_id'], 'sin perfil'), r['solicitado_en'], r['aviso'], r['nombre'], r['username']]))
+        elif args.command == 'importar':
+            registry.import_request(args.telegram_id)
+            publish_registration_policy(registry)
+            print(f'Perfil pendiente creado: {registry.users / args.telegram_id / "profile.json"}. Completa sus datos antes de activar y aplicar.')
+        elif args.command == 'registro':
+            publish_registration_policy(registry)
+            print('Administradores de avisos sincronizados; acceso sin cambios.')
         elif args.command in {'activar', 'bloquear', 'pendiente'}:
             state = {'activar': 'activo', 'bloquear': 'bloqueado', 'pendiente': 'pendiente'}[args.command]
             registry.change(args.telegram_id, state)

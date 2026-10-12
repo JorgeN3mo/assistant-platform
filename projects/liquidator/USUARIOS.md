@@ -25,7 +25,7 @@ y comprobar la sincronización con OpenClaw, como se explica más abajo.
 }
 ```
 
-El ID es numérico, positivo y debe coincidir con la carpeta. No usar el nombre `@usuario`, que puede cambiar. Los estados son `pendiente`, `activo` y `bloqueado`; solo `activo` da acceso. `admin` y `usuario` son roles de la futura aplicación: no conceden permisos de administración de OpenClaw. El nombre completo es obligatorio para cerrar una liquidación y generar su parte; identificación fiscal y empresa pueden quedar vacías y no se imprimen.
+El ID es numérico, positivo y debe coincidir con la carpeta. No usar el nombre `@usuario`, que puede cambiar. Los estados son `pendiente`, `activo` y `bloqueado`; solo `activo` da acceso. `admin` recibe avisos de nuevas solicitudes mientras está activo; `usuario` no. Estos roles no conceden permisos de administración de OpenClaw. El nombre completo es obligatorio para cerrar una liquidación y generar su parte; identificación fiscal y empresa pueden quedar vacías y no se imprimen.
 
 Los directorios creados por la herramienta tienen permisos `700` y los archivos `600`. No subir perfiles al repositorio ni enviarlos al bot.
 
@@ -107,7 +107,7 @@ miniGUN /opt/ai-platform/scripts/usuarios.sh aplicar
 4. Actualiza únicamente los controles de acceso de Telegram, tanto generales como los de la cuenta `liki`.
 5. Confirma que el gateway ha cargado esa configuración y guarda un recibo privado en `/data/liquidator/users-access.json`.
 
-La recarga es automática; no hace falta reiniciar. Si no hay usuarios activos, se deshabilitan los mensajes privados. Los grupos siguen bloqueados. Los modelos, las herramientas y los propietarios de comandos no se modifican.
+La recarga es automática; no hace falta reiniciar. Si no hay usuarios activos, solo se admiten solicitudes de acceso; ninguna persona puede utilizar Liquidator. Los grupos siguen bloqueados. Los modelos, las herramientas y los propietarios de comandos no se modifican.
 
 Un perfil incorrecto detiene la aplicación completa antes de cambiar permisos; conserva el acceso anterior. Si falla la confirmación después de escribir, la herramienta lo indica y no registra éxito: revisar el servicio y volver a aplicar. El bloqueo afecta a nuevos mensajes; no cancela una respuesta que ya se esté generando ni borra conversaciones anteriores.
 
@@ -115,10 +115,58 @@ La herramienta presupone que Liki es la única cuenta Telegram y se detiene si s
 
 ## Alcance actual
 
-El perfil inicial del administrador está activo. No se crean usuarios desde Telegram. Las facturas, liquidaciones y CSV se separan por usuario y se comprueba la propiedad en cada acción. El alta desde Telegram y los avisos de solicitudes siguen aplazados.
+El perfil inicial del administrador está activo. Telegram crea solicitudes; únicamente el administrador puede importarlas como perfiles pendientes. Las facturas, liquidaciones y CSV se separan por usuario y se comprueba la propiedad en cada acción. Las solicitudes y avisos están implementados; la activación sigue siendo manual.
 
 Pruebas locales:
 
 ```bash
 python3 -m unittest discover -s projects/liquidator -p 'test_*.py' -v
 ```
+
+## Registro mediante enlace
+
+Comparte https://t.me/liki_liquidator_bot?start=solicitar. La persona pulsa **Iniciar**
+(o envía `/start`) y OpenClaw solicita acceso antes de procesar mensajes o fotos.
+El enlace es público y no concede permisos. También puede solicitar quien encuentre
+el bot sin enlace. El acuse nativo muestra un código técnico; Liki añade una
+confirmación en español. No es necesario copiar ni aprobar ese código.
+
+Cada administrador activo recibe ID, nombre y alias públicos de Telegram. El
+nombre es declarativo: confirma personalmente a quién pertenece antes de activar.
+No hay llamadas al LLM. Repetir una solicitud no repite el aviso. El código nativo
+caduca; la solicitud guardada por Liquidator permanece disponible.
+
+Desde el Mac (sustituye el ID ficticio):
+
+```bash
+ssh miniGUN 'sudo /opt/ai-platform/scripts/usuarios.sh solicitudes'
+ssh miniGUN 'sudo /opt/ai-platform/scripts/usuarios.sh importar 123456789'
+ssh -t miniGUN 'sudo nano /data/liquidator/users/123456789/profile.json'
+ssh miniGUN 'sudo /opt/ai-platform/scripts/usuarios.sh validar'
+ssh miniGUN 'sudo /opt/ai-platform/scripts/usuarios.sh activar 123456789'
+ssh miniGUN 'sudo /opt/ai-platform/scripts/usuarios.sh aplicar'
+```
+
+Al editar, completa `nombre` y `datos_informes.nombre_completo`; deja `estado` como
+`pendiente` hasta activar y `rol` como `usuario`. `importar` nunca sobrescribe un
+perfil existente. No necesitas desplegar código ni usar Git para altas y cambios.
+Una vez aplicado, la persona puede volver a enviar `/start` y usar Liki. No se envía
+un aviso automático de aprobación en esta versión.
+
+Los archivos privados son:
+
+- `/data/liquidator/runtime/access-requests/<ID>.json`: solicitud, fecha y resultado
+  del aviso; permisos 600. No contiene mensajes, fotos ni códigos de emparejamiento.
+- `/data/liquidator/registration-policy.json`: IDs conocidos y administradores
+  activos, generados desde los perfiles; root:openclaw, 640. No concede acceso.
+- `/data/liquidator/users/<ID>/profile.json`: perfil administrativo que completas.
+
+`aplicar` y el despliegue publican los destinatarios de avisos. `registro` permite
+actualizar únicamente esa proyección. Los perfiles conocidos (incluidos bloqueados)
+no generan avisos nuevos. Nunca usar `openclaw pairing approve` para dar acceso:
+Liquidator exige que el ID esté en las dos listas explícitas que publica `aplicar`.
+
+Límites: 1000 solicitudes persistentes y 20 intentos de aviso al día (UTC). Si un
+aviso falla o alcanza el cupo, la solicitud sigue visible en `solicitudes`; no hay
+reintentos automáticos. OpenClaw aplica además su propio límite temporal de solicitudes.
+Los acuses técnicos nativos no están sujetos al límite de avisos de Liquidator.

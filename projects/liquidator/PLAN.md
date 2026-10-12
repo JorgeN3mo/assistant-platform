@@ -3,7 +3,7 @@
 | Bloque | Alcance | Estado |
 |---|---|---|
 | 1. Base y despliegue | Repositorio único, Mac → Git → MiniGUN, servicio y Telegram | Operativo |
-| 2. Acceso y funciones | Perfiles privados, allowlist, catálogo y ayuda Luna personalizada sin acciones | Implementado; solicitudes y avisos administrativos aplazados |
+| 2. Acceso y funciones | Perfiles privados, allowlist, catálogo y ayuda Luna personalizada sin acciones | Implementado; solicitudes por enlace y avisos añadidos, pendiente prueba con otra cuenta |
 | 3. Factura y revisión | Original privado, lectura, edición guiada, cuatro cobros y aceptación | Implementado; validar experiencia actual desde iPhone |
 | 4. Liquidaciones | Tres listas, totales, cierre independiente, CSV, historial y reapertura | Implementado; validar listas, botones y descarga desde iPhone |
 | 5. Presentación y operación | Parte PDF, registrar entrega, copias periódicas y recuperación | PDF implementado y validado; probar impresión móvil. Entrega y copias pendientes |
@@ -34,5 +34,5 @@ del JSON de cada usuario. Hay que completar ese nombre para poder cerrar.
    de usarlo como único registro habitual. La copia previa al despliegue no sustituye
    un sistema de copias.
 
-Aplazados: alta pública y avisos de solicitudes, cobros parciales, facturas de varias
+Aplazados: cobros parciales, facturas de varias
 páginas, lectura automática de PDF, contabilidad completa y Webmaster.

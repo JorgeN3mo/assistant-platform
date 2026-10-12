@@ -193,3 +193,20 @@ Este archivo es solo para estudio futuro. No se lee como memoria ni contexto de
 Luna y no cambia la ventana de conversación de 15 minutos. Su retención es
 independiente de los registros operativos y del caché de entregas de SQLite. No se
 crean copias adicionales del archivo ni se programa análisis automático.
+# Solicitudes de acceso
+
+El enlace `https://t.me/liki_liquidator_bot?start=solicitar` lleva al botón Iniciar.
+OpenClaw usa `pairing` como barrera previa: un desconocido puede solicitar acceso,
+pero no alcanza el flujo de facturas ni un modelo. Su acuse técnico nativo se
+complementa con un mensaje fijo en español. No se modifican archivos del proveedor.
+El evento `channel_pairing_requested` de Telegram/cuenta `liki` registra únicamente
+ID, nombre público, alias y fecha en JSON privados de runtime. No guarda el mensaje,
+fotos ni el código de emparejamiento. Las solicitudes no caducan junto al código nativo.
+
+El administrador activo recibe un aviso por solicitud, con límite global de 20
+intentos de aviso al día y un máximo de 1000 solicitudes almacenadas. Los fallos de
+envío no pierden solicitudes: se consultan con `usuarios.sh solicitudes`. Un perfil
+ya existente no vuelve a notificarse ni se sobrescribe. El administrador importa
+la solicitud como perfil pendiente, completa sus datos, activa y ejecuta `aplicar`.
+Únicamente la presencia en ambas listas explícitas concede acceso a Liquidator;
+aprobar un código nativo nunca sustituye este requisito. Los grupos siguen cerrados.

@@ -1,11 +1,19 @@
 import {Controller} from './controller.mjs';
 import {UserError} from './store.mjs';
 import {isExtractionRun} from './extract.mjs';
+import {Registration} from './registration.mjs';
 
 export default {
   id: 'liquidator', name: 'Liquidator',
   register(api) {
     const controller = new Controller({config: () => api.runtime.config.current(), runtime: api.runtime, options: api.pluginConfig, logger: api.logger});
+    const registration = new Registration({dataDir:controller.options.dataDir,accountId:controller.options.accountId,
+      config:()=>api.runtime.config.current(),logger:api.logger,send:async(to,text,accountId)=>{
+        const adapter=await api.runtime.channel.outbound.loadAdapter('telegram');
+        if(!adapter?.sendText)throw new Error('Telegram sender unavailable');
+        return adapter.sendText({cfg:api.runtime.config.current(),to,text,accountId});
+      }});
+    api.on('channel_pairing_requested',event=>registration.requested(event));
     // Catch errors inside claim hooks: a thrown claim must never fall through into a chat model.
     api.on('reply_dispatch', async (event, context) => {
       const c = event.ctx;
@@ -49,6 +57,6 @@ export default {
       controller.archive.cleanup();
       archiveTimer=setInterval(()=>controller.archive.cleanup(),3600000);
       archiveTimer.unref();
-    }, stop() { clearInterval(purgeTimer);clearInterval(archiveTimer);return controller.close(); }});
+    }, async stop() { clearInterval(purgeTimer);clearInterval(archiveTimer);await registration.close();return controller.close(); }});
   }
 };

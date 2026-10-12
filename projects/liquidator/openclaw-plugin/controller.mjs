@@ -9,7 +9,7 @@ export function authorized(cfg, account, sender, isGroup, expectedAccount='liki'
   try {userId(sender);} catch {return false;}
   if(account!==expectedAccount||isGroup!==false)return false;
   const tg=cfg.channels?.telegram,a=tg?.accounts?.[account];
-  return !!(tg&&a&&tg.enabled!==false&&a.enabled!==false&&tg.dmPolicy==='allowlist'&&a.dmPolicy==='allowlist'&&tg.allowFrom?.map(String).includes(sender)&&a.allowFrom?.map(String).includes(sender));
+  return !!(tg&&a&&tg.enabled!==false&&a.enabled!==false&&['allowlist','pairing'].includes(tg.dmPolicy)&&['allowlist','pairing'].includes(a.dmPolicy)&&tg.allowFrom?.map(String).includes(sender)&&a.allowFrom?.map(String).includes(sender));
 }
 const euros=cents=>(cents/100).toFixed(2).replace('.',',')+' €';
 const invoiceButton=(r,text,action)=>({text,callback_data:`liq:i:${r.id}:${r.revision}:${action}`});

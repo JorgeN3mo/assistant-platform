@@ -13,6 +13,7 @@ projects/liquidator/
 ├── openclaw-plugin/
 │   ├── funciones.json     # Contrato: empresas, campos, métodos, acciones, manual y límites
 │   ├── catalog.mjs        # Lectura del contrato
+│   ├── registration.mjs   # Solicitudes privadas y avisos sin LLM
 │   ├── conversations.mjs # Archivo privado de conversaciones, 90 días
 │   ├── help.mjs           # Luna redacta ayuda con contexto breve, sin ejecutar acciones
 │   ├── index.js           # Entrada JavaScript nativa de OpenClaw
@@ -34,6 +35,8 @@ projects/liquidator/
 ```text
 /data/liquidator/                              # MiniGUN, privado, fuera de Git
 ├── users/<telegram_id>/profile.json           # Fuente administrativa del acceso
+├── registration-policy.json                  # IDs conocidos y administradores de avisos
+├── runtime/access-requests/<ID>.json           # Solicitud y estado del aviso
 ├── users-access.json                         # Recibo de permisos aplicados
 ├── report-users.json                         # Nombres completos para partes, copia generada
 ├── runtime/liquidator.sqlite3                # Fichas, estado, intentos e historial
@@ -55,7 +58,7 @@ no se procesan. `/ayuda` olvida el contexto. Ver el contrato para controles y al
 Las conversaciones de ayuda se archivan en texto JSONL privado durante 90 días,
 para estudio posterior, sin encuestas ni incorporación al contexto de Luna. No se
 copian fotos, fichas, listas ni ediciones de facturas.
-Solicitudes de acceso y avisos al administrador siguen aplazados.
+Registro por enlace y avisos al administrador implementados; activación manual. Ver USUARIOS.md.
 
 ## Desarrollo y despliegue
 

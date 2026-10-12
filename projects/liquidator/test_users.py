@@ -31,12 +31,35 @@ class UserAccessTests(unittest.TestCase):
         self.assertNotIn('commands', p)  # Application roles never grant command ownership.
         self.assertNotIn('agents', p)  # Model and tool restrictions are untouched.
 
-    def test_no_active_users_closes_bot(self):
+    def test_no_active_users_allows_only_requests(self):
         self.add('101')
         p = users.access_patch(self.registry.read())['channels']['telegram']
-        self.assertEqual(p['dmPolicy'], 'disabled')
-        self.assertEqual(p['accounts']['liki']['dmPolicy'], 'disabled')
+        self.assertEqual(p['dmPolicy'], 'pairing')
+        self.assertEqual(p['accounts']['liki']['dmPolicy'], 'pairing')
         self.assertEqual(p['allowFrom'], [])
+
+    def test_request_import_is_pending_and_never_overwrites_blocked_profile(self):
+        folder = self.data / 'runtime/access-requests'
+        folder.mkdir(parents=True)
+        users.atomic_json(folder / '101.json', {'telegram_id': '101', 'nombre': 'Ana Prueba', 'username': 'ana', 'solicitado_en': '2026-10-12T10:00:00Z', 'aviso': 'enviado'})
+        self.registry.import_request('101')
+        p = self.registry.read()[0]
+        self.assertEqual(p['estado'], 'pendiente')
+        self.assertEqual(p['rol'], 'usuario')
+        self.assertEqual(p['datos_informes']['nombre_completo'], '')
+        self.registry.change('101', 'bloqueado')
+        with self.assertRaises(users.RegistryError):
+            self.registry.import_request('101')
+        self.assertEqual(self.registry.read()[0]['estado'], 'bloqueado')
+
+    def test_registration_projection_only_active_admins_and_known_ids(self):
+        self.add('101', 'activo', 'admin')
+        self.add('102', 'bloqueado', 'admin')
+        self.add('103', 'activo')
+        users.publish_registration_policy(self.registry)
+        path = self.data / 'registration-policy.json'
+        self.assertEqual(json.loads(path.read_text()), {'admin_ids': ['101'], 'known_ids': ['101', '102', '103']})
+        self.assertEqual(path.stat().st_mode & 0o777, 0o640)
 
     def test_invalid_json_does_not_invoke_openclaw(self):
         self.add('101', 'activo')
