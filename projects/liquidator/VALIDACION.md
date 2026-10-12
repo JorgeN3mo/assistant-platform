@@ -171,7 +171,9 @@ privado distinto del de producción. No se enviaron mensajes a Telegram.
 Se creó copia privada de configuración y SQLite antes de migrar. La base real
 conservó su única ficha antigua descartada, sin introducir facturas de las pruebas.
 La migración terminó con integridad correcta. Continúa un único usuario autorizado,
-allowlist en cuenta y canal, grupos deshabilitados y Luna como único modelo.
+listas explícitas en cuenta y canal, grupos deshabilitados y Luna como único modelo.
+Desde el 12 de octubre, el transporte usa pairing para recoger solicitudes; las
+listas explícitas siguen siendo obligatorias para usar Liquidator.
 
 El código publicado procede de Git y se ejecuta desde una copia versionada de root.
 El servicio mantiene sus permisos limitados; los perfiles administrativos quedan
@@ -184,5 +186,32 @@ correcciones, listas, cierre, recepción efectiva del CSV y reapertura. Se ha pr
 el contenido del documento y el payload de descarga, no una entrega real del CSV a
 Telegram. Esta distinción es necesaria antes de dar por cerrados los bloques 3 y 4.
 
-Siguen fuera: avisos de solicitudes de acceso, presentación del documento, formato
+Siguen fuera: presentación del documento, formato
 final de entrega, copias periódicas, cobros parciales, PDF automático y varias páginas.
+
+## Registro por enlace — 12 de octubre de 2026
+
+Implementación `4665396`, plugin 0.4.1, desplegada con copia privada y servicio activo.
+Pruebas locales: 58 Node y 14 Python, todas correctas (incluyen 9 nuevas pruebas de
+registro, proyección administrativa y transporte del plugin).
+
+Validación adicional con OpenClaw 2026.9.9 instalado en MiniGUN:
+
+- El autorizador real `enforceTelegramDmAccess` deniega al desconocido, emite el
+  evento nativo y el hook cargado de Liquidator guarda la solicitud privada.
+- Se utiliza el resolutor real de política del SDK; el almacenamiento nativo de
+  códigos se sustituye por un resultado ficticio. La respuesta de Telegram se
+  intercepta, y el presupuesto agotado evita cualquier envío adicional del plugin.
+- Se comprueba ID, nombre, ausencia del código en JSON y rechazo del mismo remitente
+  en `reply_dispatch`, sin crear SQLite ni ejecutar inferencia.
+- Las pruebas locales del plugin verifican ambos envíos mediante un adaptador falso:
+  destinatario administrador fijo y confirmación al solicitante. Cubren duplicados,
+  fallos de entrega, límite diario, perfiles bloqueados y no concesión de acceso.
+- En producción: pairing en canal/cuenta, listas explícitas sin cambios (un usuario),
+  grupos bloqueados, un administrador activo para avisos, proyección privada 640.
+
+No se enviaron avisos ficticios a Telegram ni se crearon solicitudes de prueba en
+producción. Falta la aceptación desde una segunda cuenta: abrir el enlace, Iniciar,
+ver acuse nativo + confirmación en español, comprobar aviso al administrador e
+importar/completar/activar/aplicar el perfil. La caducidad del código nativo no borra
+la solicitud de Liquidator. La pantalla nativa técnica no se ha personalizado.
